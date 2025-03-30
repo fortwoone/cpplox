@@ -9,7 +9,14 @@ namespace tokenizer{
             {'(', "LEFT_PAREN"},
             {')', "RIGHT_PAREN"},
             {'{', "LEFT_BRACE"},
-            {'}', "RIGHT_BRACE"}
+            {'}', "RIGHT_BRACE"},
+            {'.', "DOT"},
+            {'*', "STAR"},
+            {'-', "MINUS"},
+            {'+', "PLUS"},
+            {';', "SEMICOLON"},
+            {',', "COMMA"},
+            {'/', "SLASH"}
     };
 
     void tokenize(const string& file_contents){
