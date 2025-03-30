@@ -84,10 +84,10 @@ namespace tokenizer{
             }
             else{
                 auto precision = number.size() - dot_pos - 1;
-                size_t actual_precision = precision;
+                size_t actual_precision = 0;
                 for (auto i = 0; i <= precision; ++i){
                     if (number[dot_pos + i + 1] != '0'){
-                        actual_precision = i;
+                        actual_precision = i + 1;
                     }
                     actual_precision = max<size_t>(actual_precision, 1);
                 }
