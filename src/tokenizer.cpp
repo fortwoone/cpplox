@@ -19,7 +19,7 @@ namespace tokenizer{
             {'/', "SLASH"}
     };
 
-    void tokenize(const string& file_contents){
+    bool tokenize(const string& file_contents){
         ulong line_count = 1;
         bool lexical_errors = false;
         for (const auto& byte: file_contents){
@@ -35,7 +35,6 @@ namespace tokenizer{
                 cerr << "[line " << line_count << "] Error: Unexpected character: " << byte << endl;
             }
         }
-        if (lexical_errors)
-            exit(65);
+        return lexical_errors;
     }
 }

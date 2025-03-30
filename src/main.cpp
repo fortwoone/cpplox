@@ -34,14 +34,17 @@ int main(int argc, char *argv[]) {
 
     if (command == "tokenize") {
         string file_contents = read_file_contents(argv[2]);
-        
-        // Uncomment this block to pass the first stage
-        // 
-         if (!file_contents.empty()) {
-             tokenizer::tokenize(file_contents);
-         }
-         cout << "EOF  null" << endl; // Placeholder, remove this line when implementing the scanner
-        
+
+        bool contained_errors = false;
+        if (!file_contents.empty()) {
+            contained_errors = tokenizer::tokenize(file_contents);
+        }
+
+        cout << "EOF  null" << endl; // Placeholder, remove this line when implementing the scanner
+        if (contained_errors){
+            return 65;
+        }
+
     } else {
         cerr << "Unknown command: " << command << endl;
         return 1;

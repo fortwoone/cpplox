@@ -17,5 +17,5 @@ namespace tokenizer{
     using std::string;
     using std::unordered_map;
 
-    void tokenize(const string& file_contents);
+    bool tokenize(const string& file_contents);
 }
