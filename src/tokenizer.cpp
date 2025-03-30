@@ -37,10 +37,12 @@ namespace tokenizer{
                     else{
                         equal_char_streak = 0;
                         cout << "EQUAL_EQUAL == null" << endl;
-                        continue;
                     }
+                    continue;
                 }
                 else{
+                    if (equal_char_streak)
+                        cout << "EQUAL = null" << endl;
                     equal_char_streak = 0;
                 }
                 cout << _TOKEN_NAMES.at(byte) << " " << byte << " null" << endl;
