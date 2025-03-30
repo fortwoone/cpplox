@@ -90,6 +90,7 @@ namespace tokenizer{
         for (const auto& byte: file_contents){
             // Check for number literals.
             if (priv::is_digit(byte)){
+                cout << "FOUND DIGIT" << endl;
                 if (in_number){
                     literal_str.push_back(byte);
                     idx++;

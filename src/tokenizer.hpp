@@ -15,6 +15,7 @@ namespace tokenizer{
     using std::cerr;
     using std::endl;
     using std::exit;
+    using std::stoi;
     using std::stod;
     using std::string;
     using std::unordered_map;
