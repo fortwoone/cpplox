@@ -84,7 +84,7 @@ namespace tokenizer{
             }
             else{
                 auto precision = number.size() - dot_pos;
-                cout << fixed << setprecision(precision) << stod(number) << endl;
+                cout << setprecision(precision) << stod(number) << endl;
             }
             reset_precision();
         }
