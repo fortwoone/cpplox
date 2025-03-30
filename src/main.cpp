@@ -4,6 +4,16 @@
 #include <sstream>
 #include <string>
 
+// region Using directives
+using std::cout;
+using std::cerr;
+using std::endl;
+using std::exit;
+using std::string;
+using std::stringstream;
+using std::unitbuf;
+// endregion
+
 std::string read_file_contents(const std::string& filename);
 
 int main(int argc, char *argv[]) {
@@ -27,8 +37,16 @@ int main(int argc, char *argv[]) {
         // Uncomment this block to pass the first stage
         // 
          if (!file_contents.empty()) {
-             std::cerr << "Scanner not implemented" << std::endl;
-             return 1;
+             for (auto byte: file_contents){
+                 switch (byte){
+                     case '(':
+                         cout << "LEFT_PAREN ( null" << endl;
+                         break;
+                     case ')':
+                         cout << "RIGHT_PAREN ) null" << endl;
+                         break;
+                 }
+             }
          }
          std::cout << "EOF  null" << std::endl; // Placeholder, remove this line when implementing the scanner
         
