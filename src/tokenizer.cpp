@@ -53,7 +53,7 @@ namespace tokenizer{
                     if (idx + 1 < char_count && file_contents[idx + 1] == '='){
                         // If the operator's followed by an '=', ignore it when looping on it next.
                         equal_contained_in_op = true;
-                        cout << _TOKEN_NAMES.at(byte) << "_EQUAL" << byte << "= null" << endl;
+                        cout << _TOKEN_NAMES.at(byte) << "_EQUAL " << byte << "= null" << endl;
                         idx++;
                         continue;
                     }
