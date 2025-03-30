@@ -46,6 +46,9 @@ namespace tokenizer{
                 if (_IGNORE_CHARS.find(byte) != _IGNORE_CHARS.end()){
 #           endif
                 idx++;
+                if (byte == '\n'){
+                    line_count++;
+                }
                 continue;
             }
 
