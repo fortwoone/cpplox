@@ -78,7 +78,7 @@ namespace tokenizer{
 
         void display_number(const string& number){
             string::size_type dot_pos = number.find(".", 1);
-            if (dot_pos == string::npos){
+            if (dot_pos == string::npos || (stoi(number) == static_cast<int>(stod(number)))){
                 cout << fixed << setprecision(1) << stod(number) << endl;
                 reset_precision();
             }
