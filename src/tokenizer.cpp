@@ -42,7 +42,6 @@ namespace tokenizer{
         size_t char_count = file_contents.size();
         bool lexical_errors = false;
         for (const auto& byte: file_contents){
-
             // Check for tabs or whitespace characters. If the current byte is either a space or a tab, ignore it.
 #           if __cplusplus >= 202002L
             if (_IGNORE_CHARS.contains(byte)){
@@ -65,10 +64,12 @@ namespace tokenizer{
 
             if (in_comment){
                 idx++;
-                continue;  // Ignore characters until next line.
+                continue;  // Ignore characters until next line if in a comment.
             }
 
             if (byte == '"'){
+                // Start reading a string literal when reaching a double quote,
+                // or finish reading it if a string literal was already being read.
                 if (!in_string){
                     in_string = true;
                     literal_str.clear();
@@ -128,12 +129,15 @@ namespace tokenizer{
                 cout << _TOKEN_NAMES.at(byte) << " " << byte << " null" << endl;
             }
             else{
+                // Unrecognised token character. Show an error has occurred.
                 lexical_errors = true;
                 cerr << "[line " << line_count << "] Error: Unexpected character: " << byte << endl;
             }
             idx++;
         }
+
         if (in_string){
+            // A string literal was not terminated (still reading a string upon reaching the end of the file).
             cerr << "[line " << str_line_start << "] Error: Unterminated string." << endl;
             lexical_errors = true;
         }
