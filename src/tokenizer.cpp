@@ -28,7 +28,7 @@ namespace tokenizer{
     };
 
     const unordered_set<char> _IGNORE_CHARS{
-        '\t', ' '
+        '\t', ' ', '\n'
     };
 
     bool tokenize(const string& file_contents){
