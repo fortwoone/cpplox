@@ -3,11 +3,13 @@
 //
 
 #pragma once
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <unordered_map>
 
 namespace tokenizer{
+    using ulong = uint64_t;
     using std::cout;
     using std::cerr;
     using std::endl;
