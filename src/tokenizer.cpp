@@ -50,6 +50,7 @@ namespace tokenizer{
                 if (byte == '\n'){
                     line_count++;
                     if (in_comment){
+                        // Comment state and found a line feed: resume parsing after the next character.
                         in_comment = false;
                     }
                 }
@@ -76,9 +77,9 @@ namespace tokenizer{
                 // Check for comment start. If two slashes are found, immediately stop tokenising.
                 if (byte == '/'){
                     if (idx + 1 < char_count && file_contents[idx + 1] == '/'){
-                        // Comment start. Stop parsing and jump to next line.
+                        // Comment start. Stop parsing and ignore all characters until the next line feed.
                         in_comment = true;
-                        idx ++;
+                        idx++;
                         continue;
                     }
                 }
