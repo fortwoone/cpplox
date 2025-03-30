@@ -92,11 +92,13 @@ namespace tokenizer{
             if (priv::is_digit(byte)){
                 cout << "FOUND DIGIT" << endl;
                 if (in_number){
+                    cout << "CONTINUING TO ADD DIGITS" << endl;
                     literal_str.push_back(byte);
                     idx++;
                     continue;
                 }
                 else if (!in_string){
+                    cout << "INITIATE LITERAL READING" << endl;
                     in_number = true;
                     literal_str.clear();
                     literal_str.push_back(byte);
@@ -105,6 +107,7 @@ namespace tokenizer{
                 }
             }
             else if (in_number){
+                cout << "STOP ADDING DIGITS" << endl;
                 in_number = false;
                 cout << "NUMBER " << literal_str << " " << stod(literal_str) << endl;
             }
