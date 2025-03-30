@@ -39,16 +39,6 @@ int main(int argc, char *argv[]) {
         // 
          if (!file_contents.empty()) {
              tokenizer::tokenize(file_contents);
-//             for (auto byte: file_contents){
-//                 switch (byte){
-//                     case '(':
-//                         cout << "LEFT_PAREN ( null" << endl;
-//                         break;
-//                     case ')':
-//                         cout << "RIGHT_PAREN ) null" << endl;
-//                         break;
-//                 }
-//             }
          }
          cout << "EOF  null" << endl; // Placeholder, remove this line when implementing the scanner
         

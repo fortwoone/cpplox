@@ -8,8 +8,8 @@ namespace tokenizer{
     const unordered_map<char, string> _TOKEN_NAMES{
             {'(', "LEFT_PAREN"},
             {')', "RIGHT_PAREN"},
-            {'{', "LEFT BRACE"},
-            {'}', "RIGHT BRACE"}
+            {'{', "LEFT_BRACE"},
+            {'}', "RIGHT_BRACE"}
     };
 
     void tokenize(const string& file_contents){
