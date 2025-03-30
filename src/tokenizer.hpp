@@ -19,6 +19,7 @@ namespace tokenizer{
     using std::exit;
     using std::fixed;
     using std::max;
+    using std::min;
     using std::setprecision;
     using std::stoi;
     using std::stod;
