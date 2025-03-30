@@ -52,6 +52,9 @@ namespace tokenizer{
                 cerr << "[line " << line_count << "] Error: Unexpected character: " << byte << endl;
             }
         }
+        if (equal_char_streak){
+            cout << "EQUAL = null" << endl;
+        }
         return lexical_errors;
     }
 }
