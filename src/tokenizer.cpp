@@ -89,7 +89,7 @@ namespace tokenizer{
                     if (number[dot_pos + i + 1] != '0'){
                         actual_precision = i;
                     }
-                    actual_precision = max(actual_precision, 1);
+                    actual_precision = max<size_t>(actual_precision, 1);
                 }
                 cout << fixed << setprecision(actual_precision) << stod(number) << endl;
             }
