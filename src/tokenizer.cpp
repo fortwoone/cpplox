@@ -24,7 +24,7 @@ namespace tokenizer{
         ulong line_count = 1;
         ubyte equal_char_streak = 0;
         bool lexical_errors = false;
-        for (const auto& byte: file_contents){
+        for (auto byte: file_contents){
 #           if __cplusplus >= 202002L
             if (_TOKEN_NAMES.contains(byte)){
 #           else
