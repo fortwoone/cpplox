@@ -18,13 +18,20 @@ namespace tokenizer{
             {',', "COMMA"},
             {'/', "SLASH"},
             {'=', "EQUAL"},
-            {'!', "BANG"}
+            {'!', "BANG"},
+            {'<', "LESS"},
+            {'>', "GREATER"}
+    };
+
+    const unordered_set<char> _COMPLEX_TOKENS{
+        '=', '!', '<', '>'
     };
 
     bool tokenize(const string& file_contents){
         ulong line_count = 1;
-        ubyte equal_char_streak = 0;
-        bool found_bang = false;
+        bool equal_contained_in_op = false;
+        size_t idx = 0;
+        size_t char_count = file_contents.size();
         bool lexical_errors = false;
         for (const auto& byte: file_contents){
 #           if __cplusplus >= 202002L
@@ -32,34 +39,24 @@ namespace tokenizer{
 #           else
             if (_TOKEN_NAMES.find(byte) != _TOKEN_NAMES.end()){
 #           endif
-                // region Handling complex operators
-                if (byte == '='){
-                    if (found_bang){
-                        found_bang = false;
-                        cout << "BANG_EQUAL != null" << endl;
-                    }
-                    else if (equal_char_streak < 1){
-                        equal_char_streak++;
-                    }
-                    else{
-                        equal_char_streak = 0;
-                        cout << "EQUAL_EQUAL == null" << endl;
-                    }
+                if (equal_contained_in_op){
+                    equal_contained_in_op = false;
+                    idx++;
                     continue;
                 }
-                else if (byte == '!'){
-                    if (!found_bang){
-                        found_bang = true;
+                // region Handling complex operators
+#               if __cplusplus >= 202002L
+                if (_COMPLEX_TOKENS.contains(byte)){
+#               else
+                if (_COMPLEX_TOKENS.find(byte) != _COMPLEX_TOKENS.end()){
+#               endif
+                    if (idx + 1 < char_count && file_contents[idx + 1] == '='){
+                        // If the operator's followed by an '=', ignore it when looping on it next.
+                        equal_contained_in_op = true;
+                        cout << _TOKEN_NAMES.at(byte) << "_EQUAL" << byte << "= null" << endl;
+                        idx++;
                         continue;
                     }
-                }
-                else{
-                    if (equal_char_streak)
-                        cout << "EQUAL = null" << endl;
-                    else if (found_bang)
-                        cout << "BANG ! null" << endl;
-                    equal_char_streak = 0;
-                    found_bang = false;
                 }
                 // endregion
                 cout << _TOKEN_NAMES.at(byte) << " " << byte << " null" << endl;
@@ -68,9 +65,7 @@ namespace tokenizer{
                 lexical_errors = true;
                 cerr << "[line " << line_count << "] Error: Unexpected character: " << byte << endl;
             }
-        }
-        if (equal_char_streak){
-            cout << "EQUAL = null" << endl;
+            idx++;
         }
         return lexical_errors;
     }

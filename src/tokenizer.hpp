@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace tokenizer{
     using ubyte = uint8_t;
@@ -17,6 +18,7 @@ namespace tokenizer{
     using std::exit;
     using std::string;
     using std::unordered_map;
+    using std::unordered_set;
 
     bool tokenize(const string& file_contents);
 }
