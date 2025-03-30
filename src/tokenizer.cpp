@@ -250,7 +250,6 @@ namespace tokenizer{
             in_number = false;
             cout << "NUMBER " << literal_str << " ";
             priv::display_number(literal_str);
-            cout << endl;
         }
 
         if (in_string){
