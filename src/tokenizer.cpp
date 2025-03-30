@@ -33,8 +33,11 @@ namespace tokenizer{
 
     bool tokenize(const string& file_contents){
         ulong line_count = 1;
+        ulong str_line_start = line_count;
         bool equal_contained_in_op = false;
         bool in_comment = false;
+        bool in_string = false;
+        string literal_str{};
         size_t idx = 0;
         size_t char_count = file_contents.size();
         bool lexical_errors = false;
@@ -46,6 +49,9 @@ namespace tokenizer{
 #           else
                 if (_IGNORE_CHARS.find(byte) != _IGNORE_CHARS.end()){
 #           endif
+                if (in_string){
+                    literal_str.push_back(byte);
+                }
                 idx++;
                 if (byte == '\n'){
                     line_count++;
@@ -58,7 +64,28 @@ namespace tokenizer{
             }
 
             if (in_comment){
+                idx++;
                 continue;  // Ignore characters until next line.
+            }
+
+            if (byte == '"'){
+                if (!in_string){
+                    in_string = true;
+                    literal_str.clear();
+                    str_line_start = line_count;
+                }
+                else{
+                    in_string = false;
+                    cout << "STRING \"" << literal_str << "\" " << literal_str << endl;
+                }
+                idx++;
+                continue;
+            }
+
+            if (in_string){
+                literal_str.push_back(byte);
+                idx++;
+                continue;
             }
 
 #           if __cplusplus >= 202002L
@@ -105,6 +132,10 @@ namespace tokenizer{
                 cerr << "[line " << line_count << "] Error: Unexpected character: " << byte << endl;
             }
             idx++;
+        }
+        if (in_string){
+            cerr << "[line " << str_line_start << "] Error: Unterminated string." << endl;
+            lexical_errors = true;
         }
         return lexical_errors;
     }
