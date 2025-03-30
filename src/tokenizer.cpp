@@ -38,6 +38,17 @@ namespace tokenizer{
         size_t char_count = file_contents.size();
         bool lexical_errors = false;
         for (const auto& byte: file_contents){
+
+            // Check for tabs or whitespace characters. If the current byte is either a space or a tab, ignore it.
+#           if __cplusplus >= 202002L
+            if (_IGNORE_CHARS.contains(byte)){
+#           else
+                if (_IGNORE_CHARS.find(byte) != _IGNORE_CHARS.end()){
+#           endif
+                idx++;
+                continue;
+            }
+
 #           if __cplusplus >= 202002L
             if (_TOKEN_NAMES.contains(byte)){
 #           else
@@ -59,15 +70,6 @@ namespace tokenizer{
                     }
                 }
 
-                // Check for tabs or whitespace characters. If the current byte is either a space or a tab, ignore it.
-#               if __cplusplus >= 202002L
-                if (_IGNORE_CHARS.contains(byte)){
-#               else
-                if (_IGNORE_CHARS.find(byte) != _IGNORE_CHARS.end()){
-#               endif
-                    idx++;
-                    continue;
-                }
                 // Handling complex operators
 #               if __cplusplus >= 202002L
                 if (_COMPLEX_TOKENS.contains(byte)){
