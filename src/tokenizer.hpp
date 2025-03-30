@@ -9,6 +9,7 @@
 #include <unordered_map>
 
 namespace tokenizer{
+    using ubyte = uint8_t;
     using ulong = uint64_t;
     using std::cout;
     using std::cerr;
