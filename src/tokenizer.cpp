@@ -24,14 +24,14 @@ namespace tokenizer{
         ulong line_count = 1;
         ubyte equal_char_streak = 0;
         bool lexical_errors = false;
-        for (auto byte: file_contents){
+        for (const auto& byte: file_contents){
 #           if __cplusplus >= 202002L
             if (_TOKEN_NAMES.contains(byte)){
 #           else
             if (_TOKEN_NAMES.find(byte) != _TOKEN_NAMES.end()){
 #           endif
                 if (byte == '='){
-                    if (equal_char_streak < 2){
+                    if (equal_char_streak < 1){
                         equal_char_streak++;
                     }
                     else{
