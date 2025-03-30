@@ -27,6 +27,10 @@ namespace tokenizer{
         '=', '!', '<', '>'
     };
 
+    const unordered_set<char> _IGNORE_CHARS{
+        '\t', ' '
+    };
+
     bool tokenize(const string& file_contents){
         ulong line_count = 1;
         bool equal_contained_in_op = false;
@@ -55,6 +59,15 @@ namespace tokenizer{
                     }
                 }
 
+                // Check for tabs or whitespace characters. If the current byte is either a space or a tab, ignore it.
+#               if __cplusplus >= 202002L
+                if (_IGNORE_CHARS.contains(byte)){
+#               else
+                if (_IGNORE_CHARS.find(byte) != _IGNORE_CHARS.end()){
+#               endif
+                    idx++;
+                    continue;
+                }
                 // Handling complex operators
 #               if __cplusplus >= 202002L
                 if (_COMPLEX_TOKENS.contains(byte)){
