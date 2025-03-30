@@ -74,7 +74,7 @@ namespace tokenizer{
                             break;
                         }
                         else{
-                            idx = (size_t)next_line_pos + 1;
+                            idx = (size_t)(next_line_pos + 1);
                             line_count++;
                             continue;
                         }
