@@ -20,11 +20,13 @@ namespace tokenizer{
     using std::unordered_map;
     using std::unordered_set;
 
-    bool is_token(const char& c);
-    string get_token_name(const char& c);
-    bool is_complex_token(const char& c);
-    bool is_ignore_char(const char& c);
-    bool is_digit(const char& c);
+    namespace priv{
+        bool is_token(const char& c);
+        string get_token_name(const char& c);
+        bool is_complex_token(const char& c);
+        bool is_ignore_char(const char& c);
+        bool is_digit(const char& c);
+    }
 
     bool tokenize(const string& file_contents);
 }

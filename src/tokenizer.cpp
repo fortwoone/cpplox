@@ -89,52 +89,23 @@ namespace tokenizer{
         bool lexical_errors = false;
         for (const auto& byte: file_contents){
             // Check for number literals.
-            if (in_number){
-                if (byte == '.'){  // Hit a dot.
-                    if (!got_floating_point_dot){  // It's the first dot in the literal.
-                        if (idx + 1 < char_count){  // There are other characters afterwards.
-                            if (priv::is_digit(file_contents[idx + 1])){  // The immediate next one is a digit.
-                                got_floating_point_dot = true;
-                                literal_str.push_back(byte);
-                                idx++;
-                                continue;
-                            }
-                            else{  // There are no digits after this dot.
-                                in_number = false;
-                                cout << "NUMBER " << literal_str << " " << stod(literal_str) << endl;
-                            }
-                        }
-                        else{  // There are no more characters after the dot.
-                            in_number = false;
-                            cout << "NUMBER " << literal_str << " " << stod(literal_str) << endl;
-                        }
-                    }
-                    else{  // It's the second dot hit while reading the literal.
-                        in_number = false;
-                        cout << "NUMBER " << literal_str << " " << stod(literal_str) << endl;
-                    }
+            if (priv::is_digit(byte)){
+                if (in_number){
+                    literal_str.push_back(byte);
+                    idx++;
+                    continue;
                 }
-                else if (!priv::is_digit(byte)){  // The current character isn't a digit nor a dot.
-                    in_number = false;
-                    cout << "NUMBER " << literal_str << " " << stod(literal_str) << endl;
-                }
-                else{  // The current character is a digit.
+                else if (!in_string){
+                    in_number = true;
+                    literal_str.clear();
                     literal_str.push_back(byte);
                     idx++;
                     continue;
                 }
             }
-            else{
-                if (!in_string){  // Not reading a string currently.
-                    if (priv::is_digit(byte)){  // The current character is a digit.
-                        in_number = true;
-                        got_floating_point_dot = false;
-                        literal_str.clear();
-                        literal_str.push_back(byte);
-                        idx++;
-                        continue;
-                    }
-                }
+            else if (in_number){
+                in_number = false;
+                cout << "NUMBER " << literal_str << " " << stod(literal_str) << endl;
             }
 
             // Check for tabs or whitespace characters. If the current byte is either a space or a tab, ignore it.
