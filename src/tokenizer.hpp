@@ -4,6 +4,7 @@
 
 #pragma once
 #include <cstdint>
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <unordered_map>
@@ -15,6 +16,8 @@ namespace tokenizer{
     using std::cerr;
     using std::endl;
     using std::exit;
+    using std::fixed;
+    using std::setprecision;
     using std::stoi;
     using std::stod;
     using std::string;
@@ -27,6 +30,7 @@ namespace tokenizer{
         bool is_complex_token(const char& c);
         bool is_ignore_char(const char& c);
         bool is_digit(const char& c);
+        void reset_precision();
     }
 
     bool tokenize(const string& file_contents);

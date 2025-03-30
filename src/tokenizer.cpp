@@ -36,6 +36,8 @@ namespace tokenizer{
         const unordered_set<char> _DIGITS{
                 '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
         };
+
+        const auto DEFAULT_PRECISION{cout.precision()};
         // endregion
 
         bool is_token(const char& c){
@@ -73,6 +75,10 @@ namespace tokenizer{
             return _DIGITS.find(c) != _DIGITS.end();
 #endif
         }
+
+        void reset_precision(){
+            cout << setprecision(DEFAULT_PRECISION);
+        }
     }
 
     bool tokenize(const string& file_contents){
@@ -102,21 +108,25 @@ namespace tokenizer{
                             else{  // There are no digits after this dot.
                                 in_number = false;
                                 cout << "NUMBER " << literal_str << " " << stod(literal_str) << endl;
+                                priv::reset_precision();
                             }
                         }
                         else{  // There are no more characters after the dot.
                             in_number = false;
                             cout << "NUMBER " << literal_str << " " << stod(literal_str) << endl;
+                            priv::reset_precision();
                         }
                     }
                     else{  // It's the second dot hit while reading the literal.
                         in_number = false;
                         cout << "NUMBER " << literal_str << " " << stod(literal_str) << endl;
+                        priv::reset_precision();
                     }
                 }
                 else if (!priv::is_digit(byte)){  // The current character isn't a digit nor a dot.
                     in_number = false;
-                    cout << "NUMBER " << literal_str << " " << stod(literal_str) << endl;
+                    cout << "NUMBER " << literal_str << " " << fixed << setprecision(1) << stod(literal_str) << endl;
+                    priv::reset_precision();
                 }
                 else{  // The current character is a digit.
                     literal_str.push_back(byte);
@@ -221,7 +231,8 @@ namespace tokenizer{
 
         if (in_number){
             in_number = false;
-            cout << "NUMBER " << literal_str << " " << stod(literal_str) << endl;
+            cout << "NUMBER " << literal_str << " " << fixed << setprecision(1) << stod(literal_str) << endl;
+            priv::reset_precision();
         }
 
         if (in_string){
