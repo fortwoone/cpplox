@@ -39,12 +39,23 @@ namespace tokenizer{
 #           else
             if (_TOKEN_NAMES.find(byte) != _TOKEN_NAMES.end()){
 #           endif
+                // Skip tokenising the current byte if it's an equal and one of the tokens in _COMPLEX_TOKENS
+                // was found as the immediate previous character.
                 if (equal_contained_in_op){
                     equal_contained_in_op = false;
                     idx++;
                     continue;
                 }
-                // region Handling complex operators
+
+                // Check for comment start. If two slashes are found, immediately stop tokenising.
+                if (byte == '/'){
+                    if (idx + 1 < char_count && file_contents[idx + 1] == '/'){
+                        // Comment start. Stop parsing.
+                        break;
+                    }
+                }
+
+                // Handling complex operators
 #               if __cplusplus >= 202002L
                 if (_COMPLEX_TOKENS.contains(byte)){
 #               else
@@ -58,7 +69,6 @@ namespace tokenizer{
                         continue;
                     }
                 }
-                // endregion
                 cout << _TOKEN_NAMES.at(byte) << " " << byte << " null" << endl;
             }
             else{
