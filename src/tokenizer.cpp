@@ -78,11 +78,16 @@ namespace tokenizer{
 
         void display_number(const string& number){
             string::size_type dot_pos = number.find(".", 1);
-            if (dot_pos == string::npos || (stoi(number) == static_cast<int>(stod(number)))){
+            if (dot_pos == string::npos){
                 cout << fixed << setprecision(1) << stod(number) << endl;
                 reset_precision();
             }
             else{
+                if (number.find_first_not_of("0", dot_pos) == string::npos){
+                    cout << fixed << setprecision(1) << stod(number) << endl;
+                    reset_precision();
+                    return;
+                }
                 auto precision = number.size() - dot_pos - 1;
                 cout << fixed << setprecision(precision) << stod(number) << endl;
             }
