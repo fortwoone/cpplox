@@ -5,31 +5,75 @@
 #include "tokenizer.hpp"
 
 namespace tokenizer{
-    const unordered_map<char, string> _TOKEN_NAMES{
-            {'(', "LEFT_PAREN"},
-            {')', "RIGHT_PAREN"},
-            {'{', "LEFT_BRACE"},
-            {'}', "RIGHT_BRACE"},
-            {'.', "DOT"},
-            {'*', "STAR"},
-            {'-', "MINUS"},
-            {'+', "PLUS"},
-            {';', "SEMICOLON"},
-            {',', "COMMA"},
-            {'/', "SLASH"},
-            {'=', "EQUAL"},
-            {'!', "BANG"},
-            {'<', "LESS"},
-            {'>', "GREATER"}
-    };
+    namespace priv{
+        // region Constants
+        const unordered_map<char, string> _TOKEN_NAMES{
+                {'(', "LEFT_PAREN"},
+                {')', "RIGHT_PAREN"},
+                {'{', "LEFT_BRACE"},
+                {'}', "RIGHT_BRACE"},
+                {'.', "DOT"},
+                {'*', "STAR"},
+                {'-', "MINUS"},
+                {'+', "PLUS"},
+                {';', "SEMICOLON"},
+                {',', "COMMA"},
+                {'/', "SLASH"},
+                {'=', "EQUAL"},
+                {'!', "BANG"},
+                {'<', "LESS"},
+                {'>', "GREATER"}
+        };
 
-    const unordered_set<char> _COMPLEX_TOKENS{
-        '=', '!', '<', '>'
-    };
+        const unordered_set<char> _COMPLEX_TOKENS{
+                '=', '!', '<', '>'
+        };
 
-    const unordered_set<char> _IGNORE_CHARS{
-        '\t', ' ', '\n'
-    };
+        const unordered_set<char> _IGNORE_CHARS{
+                '\t', ' ', '\n'
+        };
+
+        const unordered_set<char> _DIGITS{
+                '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
+        };
+        // endregion
+
+        bool is_token(const char& c){
+#if __cplusplus >= 202002L
+            return _TOKEN_NAMES.contains(c);
+#else
+            return _TOKEN_NAMES.find(c) != _TOKEN_NAMES.end();
+#endif
+        }
+
+        string get_token_name(const char& c){
+            return _TOKEN_NAMES.at(c);
+        }
+
+        bool is_complex_token(const char& c){
+#if __cplusplus >= 202002L
+            return _COMPLEX_TOKENS.contains(c);
+#else
+            return _COMPLEX_TOKENS.find(c) != _COMPLEX_TOKENS.end();
+#endif
+        }
+
+        bool is_ignore_char(const char& c){
+#if __cplusplus >= 202002L
+            return _IGNORE_CHARS.contains(c);
+#else
+            return _IGNORE_CHARS.find(c) != _IGNORE_CHARS.end();
+#endif
+        }
+
+        bool is_digit(const char& c){
+#if __cplusplus >= 202002L
+            return _DIGITS.contains(c);
+#else
+            return _DIGITS.find(c) != _DIGITS.end();
+#endif
+        }
+    }
 
     bool tokenize(const string& file_contents){
         ulong line_count = 1;
@@ -37,17 +81,62 @@ namespace tokenizer{
         bool equal_contained_in_op = false;
         bool in_comment = false;
         bool in_string = false;
+        bool in_number = false;
+        bool got_floating_point_dot = false;
         string literal_str{};
         size_t idx = 0;
         size_t char_count = file_contents.size();
         bool lexical_errors = false;
         for (const auto& byte: file_contents){
+            // Check for number literals.
+            if (in_number){
+                if (byte == '.'){  // Hit a dot.
+                    if (!got_floating_point_dot){  // It's the first dot in the literal.
+                        if (idx + 1 < char_count){  // There are other characters afterwards.
+                            if (priv::is_digit(file_contents[idx + 1])){  // The immediate next one is a digit.
+                                got_floating_point_dot = true;
+                                literal_str.push_back(byte);
+                                continue;
+                            }
+                            else{  // There are no digits after this dot.
+                                in_number = false;
+                                cout << "NUMBER " << literal_str << " " << stod(literal_str) << endl;
+                            }
+                        }
+                        else{  // There are no more characters after the dot.
+                            in_number = false;
+                            cout << "NUMBER " << literal_str << " " << stod(literal_str) << endl;
+                        }
+                    }
+                    else{  // It's the second dot hit while reading the literal.
+                        in_number = false;
+                        cout << "NUMBER " << literal_str << " " << stod(literal_str) << endl;
+                    }
+                }
+                else if (!priv::is_digit(byte)){  // The current character isn't a digit nor a dot.
+                    in_number = false;
+                    cout << "NUMBER " << literal_str << " " << stod(literal_str) << endl;
+                }
+                else{  // The current character is a digit.
+                    literal_str.push_back(byte);
+                    continue;
+                }
+            }
+            else{
+                if (!in_string){  // Not reading a string currently.
+                    if (priv::is_digit(byte)){  // The current character is a digit.
+                        in_number = true;
+                        got_floating_point_dot = false;
+                        literal_str.clear();
+                        literal_str.push_back(byte);
+                        idx++;
+                        continue;
+                    }
+                }
+            }
+
             // Check for tabs or whitespace characters. If the current byte is either a space or a tab, ignore it.
-#           if __cplusplus >= 202002L
-            if (_IGNORE_CHARS.contains(byte)){
-#           else
-                if (_IGNORE_CHARS.find(byte) != _IGNORE_CHARS.end()){
-#           endif
+            if (priv::is_ignore_char(byte)){
                 if (in_string){
                     literal_str.push_back(byte);
                 }
@@ -89,11 +178,7 @@ namespace tokenizer{
                 continue;
             }
 
-#           if __cplusplus >= 202002L
-            if (_TOKEN_NAMES.contains(byte)){
-#           else
-            if (_TOKEN_NAMES.find(byte) != _TOKEN_NAMES.end()){
-#           endif
+            if (priv::is_token(byte)){
                 // Skip tokenising the current byte if it's an equal and one of the tokens in _COMPLEX_TOKENS
                 // was found as the immediate previous character.
                 if (equal_contained_in_op){
@@ -113,20 +198,16 @@ namespace tokenizer{
                 }
 
                 // Handling complex operators
-#               if __cplusplus >= 202002L
-                if (_COMPLEX_TOKENS.contains(byte)){
-#               else
-                if (_COMPLEX_TOKENS.find(byte) != _COMPLEX_TOKENS.end()){
-#               endif
+                if (priv::is_complex_token(byte)){
                     if (idx + 1 < char_count && file_contents[idx + 1] == '='){
                         // If the operator's followed by an '=', ignore it when looping on it next.
                         equal_contained_in_op = true;
-                        cout << _TOKEN_NAMES.at(byte) << "_EQUAL " << byte << "= null" << endl;
+                        cout << priv::get_token_name(byte) << "_EQUAL " << byte << "= null" << endl;
                         idx++;
                         continue;
                     }
                 }
-                cout << _TOKEN_NAMES.at(byte) << " " << byte << " null" << endl;
+                cout << priv::get_token_name(byte) << " " << byte << " null" << endl;
             }
             else{
                 // Unrecognised token character. Show an error has occurred.
