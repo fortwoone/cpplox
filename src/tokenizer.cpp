@@ -83,13 +83,15 @@ namespace tokenizer{
                 reset_precision();
             }
             else{
-                if (number.find_first_not_of("0", dot_pos) == string::npos){
-                    cout << fixed << setprecision(1) << stod(number) << endl;
-                    reset_precision();
-                    return;
-                }
                 auto precision = number.size() - dot_pos - 1;
-                cout << fixed << setprecision(precision) << stod(number) << endl;
+                size_t actual_precision = precision;
+                for (auto i = 0; i <= precision; ++i){
+                    if (number[dot_pos + i + 1] != '0'){
+                        actual_precision = i;
+                    }
+                    actual_precision = max(actual_precision, 1);
+                }
+                cout << fixed << setprecision(actual_precision) << stod(number) << endl;
             }
             reset_precision();
         }
