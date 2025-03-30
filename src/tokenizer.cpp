@@ -125,6 +125,7 @@ namespace tokenizer{
             else{
                 if (!in_string){  // Not reading a string currently.
                     if (priv::is_digit(byte)){  // The current character is a digit.
+                        cout << "Beginning number literal parsing" << endl;
                         in_number = true;
                         got_floating_point_dot = false;
                         literal_str.clear();
