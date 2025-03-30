@@ -34,6 +34,7 @@ namespace tokenizer{
     bool tokenize(const string& file_contents){
         ulong line_count = 1;
         bool equal_contained_in_op = false;
+        bool in_comment = false;
         size_t idx = 0;
         size_t char_count = file_contents.size();
         bool lexical_errors = false;
@@ -48,8 +49,15 @@ namespace tokenizer{
                 idx++;
                 if (byte == '\n'){
                     line_count++;
+                    if (in_comment){
+                        in_comment = false;
+                    }
                 }
                 continue;
+            }
+
+            if (in_comment){
+                continue;  // Ignore characters until next line.
             }
 
 #           if __cplusplus >= 202002L
@@ -69,15 +77,9 @@ namespace tokenizer{
                 if (byte == '/'){
                     if (idx + 1 < char_count && file_contents[idx + 1] == '/'){
                         // Comment start. Stop parsing and jump to next line.
-                        string::size_type next_line_pos = file_contents.find('\n', idx);
-                        if (next_line_pos == string::npos){
-                            break;
-                        }
-                        else{
-                            idx = (size_t)(next_line_pos + 1);
-                            line_count++;
-                            continue;
-                        }
+                        in_comment = true;
+                        idx ++;
+                        continue;
                     }
                 }
 
