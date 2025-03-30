@@ -68,8 +68,16 @@ namespace tokenizer{
                 // Check for comment start. If two slashes are found, immediately stop tokenising.
                 if (byte == '/'){
                     if (idx + 1 < char_count && file_contents[idx + 1] == '/'){
-                        // Comment start. Stop parsing.
-                        break;
+                        // Comment start. Stop parsing and jump to next line.
+                        string::size_type next_line_pos = file_contents.find('\n', idx);
+                        if (next_line_pos == string::npos){
+                            break;
+                        }
+                        else{
+                            idx = (size_t)next_line_pos + 1;
+                            line_count++;
+                            continue;
+                        }
                     }
                 }
 
