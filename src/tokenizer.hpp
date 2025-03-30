@@ -30,6 +30,7 @@ namespace tokenizer{
         bool is_complex_token(const char& c);
         bool is_ignore_char(const char& c);
         bool is_digit(const char& c);
+        void display_number(double number);
         void reset_precision();
     }
 

@@ -76,6 +76,18 @@ namespace tokenizer{
 #endif
         }
 
+        void display_number(double number){
+            reset_precision();
+            if (number == static_cast<int>(number)){
+                cout << fixed << setprecision(1) << number;
+                reset_precision();
+            }
+            else{
+                reset_precision();
+                cout << number;
+            }
+        }
+
         void reset_precision(){
             cout << setprecision(DEFAULT_PRECISION);
         }
@@ -107,26 +119,30 @@ namespace tokenizer{
                             }
                             else{  // There are no digits after this dot.
                                 in_number = false;
-                                cout << "NUMBER " << literal_str << " " << stod(literal_str) << endl;
-                                priv::reset_precision();
+                                cout << "NUMBER " << literal_str << " ";
+                                priv::display_number(stod(literal_str));
+                                cout << endl;
                             }
                         }
                         else{  // There are no more characters after the dot.
                             in_number = false;
-                            cout << "NUMBER " << literal_str << " " << stod(literal_str) << endl;
-                            priv::reset_precision();
+                            cout << "NUMBER " << literal_str << " ";
+                            priv::display_number(stod(literal_str));
+                            cout << endl;
                         }
                     }
                     else{  // It's the second dot hit while reading the literal.
                         in_number = false;
-                        cout << "NUMBER " << literal_str << " " << stod(literal_str) << endl;
-                        priv::reset_precision();
+                        cout << "NUMBER " << literal_str << " ";
+                        priv::display_number(stod(literal_str));
+                        cout << endl;
                     }
                 }
                 else if (!priv::is_digit(byte)){  // The current character isn't a digit nor a dot.
                     in_number = false;
-                    cout << "NUMBER " << literal_str << " " << fixed << setprecision(1) << stod(literal_str) << endl;
-                    priv::reset_precision();
+                    cout << "NUMBER " << literal_str << " ";
+                    priv::display_number(stod(literal_str));
+                    cout << endl;
                 }
                 else{  // The current character is a digit.
                     literal_str.push_back(byte);
@@ -231,8 +247,9 @@ namespace tokenizer{
 
         if (in_number){
             in_number = false;
-            cout << "NUMBER " << literal_str << " " << fixed << setprecision(1) << stod(literal_str) << endl;
-            priv::reset_precision();
+            cout << "NUMBER " << literal_str << " ";
+            priv::display_number(stod(literal_str));
+            cout << endl;
         }
 
         if (in_string){
