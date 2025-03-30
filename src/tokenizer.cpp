@@ -21,6 +21,7 @@ namespace tokenizer{
 
     void tokenize(const string& file_contents){
         ulong line_count = 1;
+        bool lexical_errors = false;
         for (const auto& byte: file_contents){
 #           if __cplusplus >= 202002L
             if (_TOKEN_NAMES.contains(byte)){
@@ -30,8 +31,11 @@ namespace tokenizer{
                 cout << _TOKEN_NAMES.at(byte) << " " << byte << " null" << endl;
             }
             else{
+                lexical_errors = true;
                 cerr << "[line " << line_count << "] Error: Unexpected character: " << byte << endl;
             }
         }
+        if (lexical_errors)
+            exit(65);
     }
 }
