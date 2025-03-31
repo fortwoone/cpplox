@@ -22,6 +22,9 @@ namespace lox::parser{
                 case TokenType::NIL:
                     cout << "nil" << endl;
                     break;
+                case TokenType::NUMBER:
+                    cout << token.get_literal_formatted_value() << endl;
+                    break;
                 default:
                     break;
             }
