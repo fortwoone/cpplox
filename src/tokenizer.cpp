@@ -19,7 +19,7 @@ namespace lox{
 
             NullLiteral::NullLiteral(): Literal(LiteralType::NULL_LITERAL, ""){}
 
-            constexpr string NullLiteral::get_formatted_value() const{
+            string NullLiteral::get_formatted_value() const{
                 return "null";
             }
 

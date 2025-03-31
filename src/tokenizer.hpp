@@ -21,6 +21,7 @@ namespace lox{
         using std::cout;
         using std::cerr;
         using std::endl;
+        using std::exchange;
         using std::exit;
         using std::fixed;
         using std::ostringstream;
@@ -28,6 +29,7 @@ namespace lox{
         using std::stoi;
         using std::stod;
         using std::string;
+        using std::swap;
         using std::unordered_map;
         using std::unordered_set;
         using std::vector;
@@ -57,7 +59,7 @@ namespace lox{
             class NullLiteral: public Literal{
                 public:
                     NullLiteral();
-                    [[nodiscard]] constexpr string get_formatted_value() const final;
+                    [[nodiscard]] string get_formatted_value() const final;
             };
 
             class StringLiteral: public Literal{
@@ -138,6 +140,26 @@ namespace lox{
                             delete literal;
                             literal = nullptr;
                         }
+                    }
+
+                    Token(const Token& other): Token(other.token_type, lexeme, other.literal->get_literal_type()){}
+
+                    Token& operator=(const Token& other){
+                        Token temp(other);
+                        swap(literal, temp.literal);
+                        return *this;
+                    }
+
+                    Token(Token&& other) noexcept: literal(
+                        exchange(other.literal, nullptr)
+                    ), token_type(other.token_type), lexeme(other.lexeme.c_str()){}
+
+                    Token& operator=(Token&& other) noexcept{
+                        swap(literal, other.literal);
+                        token_type = std::move(other.token_type);
+                        lexeme = std::move(other.lexeme);
+
+                        return *this;
                     }
 
                     [[nodiscard]] TokenType get_token_type() const{
