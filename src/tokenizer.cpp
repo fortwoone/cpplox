@@ -37,6 +37,8 @@ namespace tokenizer{
                 '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
         };
 
+        const string _IDENTIFIER_CHRS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
+
         const auto DEFAULT_PRECISION{cout.precision()};
         // endregion
 
@@ -76,6 +78,14 @@ namespace tokenizer{
 #endif
         }
 
+        bool is_identifier_char(const char& c){
+#if __cplusplus >= 202002L
+            return _IDENTIFIER_CHRS.contains(c);
+#else
+            return _IDENTIFIER_CHRS.find(c) != _IDENTIFIER_CHRS.end();
+#endif
+        }
+
         void display_number(const string& number){
             string::size_type dot_pos = number.find(".", 1);
             if (dot_pos == string::npos){
@@ -107,6 +117,7 @@ namespace tokenizer{
         bool equal_contained_in_op = false;
         bool in_comment = false;
         bool in_string = false;
+        bool in_identifier = false;
         bool in_number = false;
         bool got_floating_point_dot = false;
         string literal_str{};
@@ -114,6 +125,31 @@ namespace tokenizer{
         size_t char_count = file_contents.size();
         bool lexical_errors = false;
         for (const auto& byte: file_contents){
+            // Check for identifiers.
+            if (in_identifier){
+                if (priv::is_identifier_char(byte) || priv::is_digit(byte)){
+                    // Accept either ASCII, underscores or digits after the first character of an identifier.
+                    literal_str.push_back(byte);
+                    idx++;
+                    continue;
+                }
+                else{
+                    in_identifier = false;
+                    cout << "IDENTIFIER " << literal_str << " null" << endl;
+                }
+            }
+            else{
+                if (!in_string && !in_number){
+                    if (priv::is_identifier_char(byte)){
+                        in_identifier = true;
+                        literal_str.clear();
+                        literal_str.push_back(byte);
+                        idx++;
+                        continue;
+                    }
+                }
+            }
+
             // Check for number literals.
             if (in_number){
                 if (byte == '.'){  // Hit a dot.
@@ -155,7 +191,7 @@ namespace tokenizer{
                 }
             }
             else{
-                if (!in_string){  // Not reading a string currently.
+                if (!in_string && !in_identifier){  // Not reading a string currently.
                     if (priv::is_digit(byte)){  // The current character is a digit.
                         in_number = true;
                         got_floating_point_dot = false;
