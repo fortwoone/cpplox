@@ -40,6 +40,25 @@ namespace tokenizer{
         const string _IDENTIFIER_CHRS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
 
         const auto DEFAULT_PRECISION{cout.precision()};
+
+        const unordered_map<string, string> _RESERVED_KEYWORDS{
+                {"and", "AND"},
+                {"class", "CLASS"},
+                {"else", "ELSE"},
+                {"false", "FALSE"},
+                {"for", "FOR"},
+                {"fun", "FUN"},
+                {"if", "IF"},
+                {"nil", "NIL"},
+                {"or", "OR"},
+                {"return", "RETURN"},
+                {"super", "SUPER"},
+                {"this", "THIS"},
+                {"true", "TRUE"},
+                {"var", "VAR"},
+                {"while", "WHILE"}
+        };
+
         // endregion
 
         bool is_token(const char& c){
@@ -84,6 +103,18 @@ namespace tokenizer{
 #else
             return _IDENTIFIER_CHRS.find(c) != _IDENTIFIER_CHRS.end();
 #endif
+        }
+
+        bool is_reserved_kw(const string& literal_str){
+#if __cplusplus >= 202002L
+            return _RESERVED_KEYWORDS.contains(literal_str);
+#else
+            return _RESERVED_KEYWORDS.find(literal_str) != _RESERVED_KEYWORDS.end();
+#endif
+        }
+
+        string get_kw_name(const string& literal_str){
+            return _RESERVED_KEYWORDS.at(literal_str);
         }
 
         void display_number(const string& number){
@@ -176,11 +207,16 @@ namespace tokenizer{
                 }
                 else{
                     in_identifier = false;
-                    cout << "IDENTIFIER " << literal_str << " null" << endl;
+                    if (priv::is_reserved_kw(literal_str)){
+                        cout << priv::get_kw_name(literal_str) << " " << literal_str << " null" << endl;
+                    }
+                    else{
+                        cout << "IDENTIFIER " << literal_str << " null" << endl;
+                    }
                 }
             }
             else{
-                if (!in_string && !in_number){
+                if (!in_number){
                     if (priv::is_identifier_char(byte)){
                         in_identifier = true;
                         literal_str.clear();
