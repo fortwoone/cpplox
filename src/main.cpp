@@ -41,10 +41,7 @@ int main(int argc, char *argv[]) {
         string file_contents = read_file_contents(argv[2]);
 
         bool contained_errors = false;
-        vector<token::Token> tokens;
-        if (!file_contents.empty()) {
-            tokens = tokenize(file_contents, &contained_errors);
-        }
+        vector<token::Token> tokens = tokenize(file_contents, &contained_errors);
 
         for (const auto& token: tokens){
             token.show_in_cli();

@@ -318,6 +318,12 @@ namespace lox{
         }
 
         vector<token::Token> tokenize(const string& file_contents, bool* contains_errors){
+            vector<token::Token> tokens;
+            if (file_contents.empty()){
+                tokens.emplace_back(token::TokenType::EOF_TOKEN);
+                return tokens;
+            }
+
             ulong line_count = 1;
             ulong str_line_start = line_count;
             bool equal_contained_in_op = false;
@@ -329,7 +335,6 @@ namespace lox{
             string literal_str{};
             size_t idx = 0;
             size_t char_count = file_contents.size();
-            vector<token::Token> tokens;
             bool lexical_errors = false;
             for (const auto& byte: file_contents){
                 if (byte == '"'){
