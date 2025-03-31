@@ -106,7 +106,6 @@ namespace tokenizer{
         }
 
         bool is_reserved_kw(const string& literal_str){
-            cout << "DEBUG " << literal_str << "(end)" << endl;
 #if __cplusplus >= 202002L
             return _RESERVED_KEYWORDS.contains(literal_str);
 #else
