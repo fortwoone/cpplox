@@ -105,12 +105,14 @@ namespace tokenizer{
 #endif
         }
 
-        bool is_reserved_kw(string literal_str){
-#if __cplusplus >= 202002L
-            return _RESERVED_KEYWORDS.contains(literal_str);
-#else
-            return _RESERVED_KEYWORDS.find(literal_str) != _RESERVED_KEYWORDS.end();
-#endif
+        bool is_reserved_kw(const string& literal_str){
+            return any_of(
+                _RESERVED_KEYWORDS.begin(),
+                _RESERVED_KEYWORDS.end(),
+                [literal_str](decltype(_RESERVED_KEYWORDS)::const_iterator::value_type entry){
+                    return !strcmp(entry.first.c_str(), literal_str.c_str());
+                }
+            );
         }
 
         string get_kw_name(const string& literal_str){
