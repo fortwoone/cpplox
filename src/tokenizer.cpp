@@ -279,7 +279,7 @@ namespace tokenizer{
             }
             else{
                 // Repeating the identifier checks to look for a possible identifier start immediately after a literal.
-                if (!in_string && priv::is_identifier_char(byte)){
+                if (priv::is_identifier_char(byte)){
                     in_identifier = true;
                     literal_str.clear();
                     literal_str.push_back(byte);
