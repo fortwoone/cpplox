@@ -51,6 +51,7 @@ namespace tokenizer{
                 {"if", "IF"},
                 {"nil", "NIL"},
                 {"or", "OR"},
+                {"print", "PRINT"},
                 {"return", "RETURN"},
                 {"super", "SUPER"},
                 {"this", "THIS"},
