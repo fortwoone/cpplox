@@ -1,7 +1,9 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <vector>
 #include "tokenizer.hpp"
+#include "parser.hpp"
 
 // region Using directives
 using std::cout;
@@ -12,6 +14,10 @@ using std::ifstream;
 using std::string;
 using std::stringstream;
 using std::unitbuf;
+using std::vector;
+
+using namespace lox::tokenizer;
+using namespace lox::parser;
 // endregion
 
 string read_file_contents(const string& filename);
@@ -25,7 +31,7 @@ int main(int argc, char *argv[]) {
     cerr << "Logs from your program will appear here!" << endl;
 
     if (argc < 3) {
-        cerr << "Usage: ./your_program tokenize <filename>" << endl;
+        cerr << "Usage: ./your_program tokenize|parse <filename>" << endl;
         return 1;
     }
 
@@ -35,16 +41,25 @@ int main(int argc, char *argv[]) {
         string file_contents = read_file_contents(argv[2]);
 
         bool contained_errors = false;
+        vector<token::Token> tokens;
         if (!file_contents.empty()) {
-            contained_errors = tokenizer::tokenize(file_contents);
+            tokens = tokenize(file_contents, &contained_errors);
         }
 
-        cout << "EOF  null" << endl; // Placeholder, remove this line when implementing the scanner
+        for (auto token: tokens){
+            token.show_in_cli();
+        }
         if (contained_errors){
             return 65;
         }
 
-    } else {
+    }
+    else if (command == "parse"){
+        string file_contents = read_file_contents(argv[2]);
+
+        parse(file_contents);
+    }
+    else{
         cerr << "Unknown command: " << command << endl;
         return 1;
     }
