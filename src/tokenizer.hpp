@@ -8,6 +8,7 @@
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -20,6 +21,7 @@ namespace tokenizer{
     using std::endl;
     using std::exit;
     using std::fixed;
+    using std::out_of_range;
     using std::setprecision;
     using std::stoi;
     using std::stod;

@@ -209,12 +209,18 @@ namespace tokenizer{
                 }
                 else{
                     in_identifier = false;
-                    if (priv::is_reserved_kw(literal_str)){
+                    try{
                         cout << priv::get_kw_name(literal_str) << " " << literal_str << " null" << endl;
                     }
-                    else{
+                    catch (const out_of_range& e){
                         cout << "IDENTIFIER " << literal_str << " null" << endl;
                     }
+//                    if (priv::is_reserved_kw(literal_str)){
+//                        cout << priv::get_kw_name(literal_str) << " " << literal_str << " null" << endl;
+//                    }
+//                    else{
+//                        cout << "IDENTIFIER " << literal_str << " null" << endl;
+//                    }
                 }
             }
             else{
