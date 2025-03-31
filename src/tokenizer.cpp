@@ -125,6 +125,28 @@ namespace tokenizer{
         size_t char_count = file_contents.size();
         bool lexical_errors = false;
         for (const auto& byte: file_contents){
+            if (byte == '"'){
+                // Start reading a string literal when reaching a double quote,
+                // or finish reading it if a string literal was already being read.
+                if (!in_string){
+                    in_string = true;
+                    literal_str.clear();
+                    str_line_start = line_count;
+                }
+                else{
+                    in_string = false;
+                    cout << "STRING \"" << literal_str << "\" " << literal_str << endl;
+                }
+                idx++;
+                continue;
+            }
+
+            if (in_string){
+                literal_str.push_back(byte);
+                idx++;
+                continue;
+            }
+
             if (in_comment){
                 idx++;
                 if (byte == '\n'){
@@ -231,28 +253,6 @@ namespace tokenizer{
                 if (byte == '\n'){
                     line_count++;
                 }
-                continue;
-            }
-
-            if (byte == '"'){
-                // Start reading a string literal when reaching a double quote,
-                // or finish reading it if a string literal was already being read.
-                if (!in_string){
-                    in_string = true;
-                    literal_str.clear();
-                    str_line_start = line_count;
-                }
-                else{
-                    in_string = false;
-                    cout << "STRING \"" << literal_str << "\" " << literal_str << endl;
-                }
-                idx++;
-                continue;
-            }
-
-            if (in_string){
-                literal_str.push_back(byte);
-                idx++;
                 continue;
             }
 
