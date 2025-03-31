@@ -37,9 +37,6 @@ namespace lox::parser{
                 default:
                     break;
             }
-            if (idx < token_count - 1 && token.get_token_type() != TokenType::LEFT_PAREN){
-                cout << " ";
-            }
         }
     }
 }
