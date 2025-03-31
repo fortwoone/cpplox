@@ -31,6 +31,9 @@ namespace tokenizer{
     using std::unordered_set;
 
     namespace priv{
+        string rtrim(const string& s);
+        string ltrim(const string& s);
+        string trim(const string& s);
         bool is_token(const char& c);
         string get_token_name(const char& c);
         bool is_complex_token(const char& c);

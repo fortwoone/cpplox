@@ -59,8 +59,26 @@ namespace tokenizer{
                 {"while", "WHILE"}
         };
 
+        const string WHITESPACE = " \n\r\t\f\v";
+
         // endregion
 
+        string ltrim(const string &s)
+        {
+            size_t start = s.find_first_not_of(WHITESPACE);
+            return (start == string::npos) ? "" : s.substr(start);
+        }
+
+        string rtrim(const string &s)
+        {
+            size_t end = s.find_last_not_of(WHITESPACE);
+            return (end == string::npos) ? "" : s.substr(0, end + 1);
+        }
+
+        string trim(const string &s) {
+            return rtrim(ltrim(s));
+        }
+        
         bool is_token(const char& c){
 #if __cplusplus >= 202002L
             return _TOKEN_NAMES.contains(c);
@@ -106,13 +124,11 @@ namespace tokenizer{
         }
 
         bool is_reserved_kw(const string& literal_str){
-            return any_of(
-                _RESERVED_KEYWORDS.begin(),
-                _RESERVED_KEYWORDS.end(),
-                [literal_str](decltype(_RESERVED_KEYWORDS)::const_iterator::value_type entry){
-                    return !strcmp(entry.first.c_str(), literal_str.c_str());
-                }
-            );
+#if __cplusplus >= 202002L
+            return _RESERVED_KEYWORDS.contains(trim(literal_str));
+#else
+            return _RESERVED_KEYWORDS.find(trim(literal_str)) != _RESERVED_KEYWORDS.end();
+#endif
         }
 
         string get_kw_name(const string& literal_str){
@@ -210,7 +226,7 @@ namespace tokenizer{
                 else{
                     in_identifier = false;
                     try{
-                        cout << priv::get_kw_name(literal_str) << " " << literal_str << " null" << endl;
+                        cout << priv::get_kw_name(priv::trim(literal_str)) << " " << literal_str << " null" << endl;
                     }
                     catch (const out_of_range& e){
                         cout << "IDENTIFIER " << literal_str << " null" << endl;
