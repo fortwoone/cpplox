@@ -207,7 +207,7 @@ namespace lox::parser{
         }
 
         public:
-            explicit Parser(const vector<Token>& token_vec);
+            explicit Parser(vector<Token>& token_vec);
 
             void parse();
 

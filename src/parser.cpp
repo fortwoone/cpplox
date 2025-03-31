@@ -8,9 +8,7 @@
 namespace lox::parser{
 
     // region Parser
-    Parser::Parser(const vector<Token>& token_vec){
-        tokens = token_vec;
-    }
+    Parser::Parser(vector<Token>& token_vec): tokens(std::move(token_vec)){}
 
     Token& Parser::advance(){
         if (!is_at_end()){
