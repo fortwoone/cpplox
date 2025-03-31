@@ -3,7 +3,6 @@
 //
 
 #pragma once
-#include <algorithm>
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
@@ -18,8 +17,6 @@ namespace tokenizer{
     using std::endl;
     using std::exit;
     using std::fixed;
-    using std::max;
-    using std::min;
     using std::setprecision;
     using std::stoi;
     using std::stod;

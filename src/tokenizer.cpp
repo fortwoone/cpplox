@@ -83,15 +83,15 @@ namespace tokenizer{
                 reset_precision();
             }
             else{
-                auto precision = number.size() - dot_pos - 1;
+                string decimals = number.substr(dot_pos + 1);
                 size_t actual_precision = 0;
-                for (auto i = 0; i <= precision; ++i){
-                    if (number[dot_pos + i + 1] != '0'){
+                for (size_t i = 0; i < decimals.size(); ++i){
+                    if (decimals[i] != '0'){
                         actual_precision = i;
                     }
-                    actual_precision = max<size_t>(min<size_t>(actual_precision, precision), 1);
                 }
-                cout << fixed << setprecision(actual_precision) << stod(number) << endl;
+                actual_precision++;
+                cout << fixed << setprecision(static_cast<int>(actual_precision)) << stod(number) << endl;
             }
             reset_precision();
         }
