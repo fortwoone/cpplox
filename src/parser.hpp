@@ -199,7 +199,7 @@ namespace lox::parser{
 
         [[nodiscard]] unique_ptr<ast::Expr> get_primary();
 
-        Token consume(TokenType token_type, const string& message){
+        Token& consume(TokenType token_type, const string& message){
             if (check(token_type)){
                 return advance();
             }
