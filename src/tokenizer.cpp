@@ -173,8 +173,8 @@ namespace lox{
                 }
             }
 
-            void Token::show_in_cli(){
-                cout << _TOKENTP_NAMES.at(token_type) << " " << lexeme << literal->get_formatted_value() << endl;
+            void Token::show_in_cli() const{
+                cout << _TOKENTP_NAMES.at(token_type) << " " << lexeme << " " << literal->get_formatted_value() << endl;
             }
         }
 

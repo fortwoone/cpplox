@@ -175,7 +175,7 @@ namespace lox{
                         return literal->get_formatted_value();
                     }
 
-                    void show_in_cli();
+                    void show_in_cli() const;
             };
         }
 

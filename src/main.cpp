@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
             tokens = tokenize(file_contents, &contained_errors);
         }
 
-        for (auto token: tokens){
+        for (const auto& token: tokens){
             token.show_in_cli();
         }
         if (contained_errors){
