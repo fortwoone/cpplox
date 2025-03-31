@@ -145,13 +145,13 @@ namespace lox::parser{
 
         class UnaryExpr: public Expr{
             public:
-                Token op;
+                Operator op;
                 unique_ptr<Expr> operand;
 
-                UnaryExpr(Token operat, unique_ptr<Expr> expression): op(operat), operand(std::move(expression)){}
+                UnaryExpr(Operator operat, unique_ptr<Expr> expression): op(operat), operand(std::move(expression)){}
 
                 [[nodiscard]] string to_string() const final{
-                    return "(" + op.get_lexeme() + " " + operand->to_string() + ")";
+                    return "(" + _OP_TO_SYM.at(op) + " " + operand->to_string() + ")";
                 }
         };
     }
