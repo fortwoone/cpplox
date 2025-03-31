@@ -175,7 +175,7 @@ namespace lox{
 
             void Token::show_in_cli() const{
                 bool is_string = (token_type == TokenType::STRING);
-                cout << _TOKENTP_NAMES.at(token_type) << (is_string ? " \"" : " ") << lexeme << (is_string ? " \"" : " ") << literal->get_formatted_value() << endl;
+                cout << _TOKENTP_NAMES.at(token_type) << (is_string ? " \"" : " ") << lexeme << (is_string ? "\" " : " ") << literal->get_formatted_value() << endl;
             }
         }
 
