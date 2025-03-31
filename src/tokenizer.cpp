@@ -278,6 +278,14 @@ namespace tokenizer{
                 cout << priv::get_token_name(byte) << " " << byte << " null" << endl;
             }
             else{
+                // Repeating the identifier checks to look for a possible identifier start immediately after a literal.
+                if (priv::is_identifier_char(byte)){
+                    in_identifier = true;
+                    literal_str.clear();
+                    literal_str.push_back(byte);
+                    idx++;
+                    continue;
+                }
                 // Unrecognised token character. Show an error has occurred.
                 lexical_errors = true;
                 cerr << "[line " << line_count << "] Error: Unexpected character: " << byte << endl;
