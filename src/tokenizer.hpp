@@ -31,7 +31,7 @@ namespace tokenizer{
         bool is_ignore_char(const char& c);
         bool is_digit(const char& c);
         bool is_identifier_char(const char& c);
-        bool is_reserved_kw(const string& literal_str);
+        bool is_reserved_kw(string literal_str);
         string get_kw_name(const string& kw_name);
         void display_number(const string& number);
         void reset_precision();

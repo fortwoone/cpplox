@@ -105,7 +105,7 @@ namespace tokenizer{
 #endif
         }
 
-        bool is_reserved_kw(const string& literal_str){
+        bool is_reserved_kw(string literal_str){
 #if __cplusplus >= 202002L
             return _RESERVED_KEYWORDS.contains(literal_str);
 #else
