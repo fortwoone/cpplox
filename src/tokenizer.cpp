@@ -291,6 +291,11 @@ namespace tokenizer{
             priv::display_number(literal_str);
         }
 
+        if (in_identifier){
+            in_identifier = false;
+            cout << "IDENTIFIER " << literal_str << " null" << endl;
+        }
+
         if (in_string){
             // A string literal was not terminated (still reading a string upon reaching the end of the file).
             cerr << "[line " << str_line_start << "] Error: Unterminated string." << endl;
