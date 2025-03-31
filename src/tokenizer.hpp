@@ -134,7 +134,10 @@ namespace lox{
                     Token(TokenType token_tp, const string& lexeme, LiteralType treat_as);
 
                     ~Token(){
-                        delete literal;
+                        if (literal != nullptr) {
+                            delete literal;
+                            literal = nullptr;
+                        }
                     }
 
                     [[nodiscard]] TokenType get_token_type() const{
