@@ -6,9 +6,6 @@
 #include "tokenizer.hpp"
 #include <algorithm>
 #include <cstdint>
-#if __cplusplus >= 202002L
-#include <format>
-#endif
 #include <initializer_list>
 #include <iostream>
 #include <memory>
@@ -25,11 +22,6 @@ namespace lox::parser{
     using lox::tokenizer::token::Token;
     using lox::tokenizer::token::TokenType;
     using lox::tokenizer::tokenize;
-
-#if __cplusplus >= 202002L
-    using std::vformat;
-    using std::make_format_args;
-#endif
 
     using std::any_of;
     using std::cout;
@@ -136,11 +128,7 @@ namespace lox::parser{
                     : left(std::move(left)), op(op), right(std::move(right)){}
 
                 [[nodiscard]] string to_string() const final{
-#if __cplusplus >= 202002L
-                    return vformat("({} {} {})", make_format_args(_OP_TO_SYM.at(op), left->to_string(), right->to_string()));
-#else
                     return "(" + _OP_TO_SYM.at(op) + " " + left->to_string() + " " + right->to_string() + ")";
-#endif
                 }
         };
 
@@ -151,11 +139,7 @@ namespace lox::parser{
                 explicit GroupExpr(unique_ptr<Expr> expression): expr(std::move(expression)){}
 
                 [[nodiscard]] string to_string() const final{
-#if __cplusplus >= 202002L
-                    return vformat("(group {})", make_format_args(expr->to_string()));
-#else
                     return "(group " + expr->to_string() + ")";
-#endif
                 }
         };
 
@@ -167,11 +151,7 @@ namespace lox::parser{
                 UnaryExpr(Token operat, unique_ptr<Expr> expression): op(operat), operand(std::move(expression)){}
 
                 [[nodiscard]] string to_string() const final{
-#if __cplusplus >= 202002L
-                    return vformat("({} {})", make_format_args(op.get_lexeme(), operand->to_string()));
-#else
                     return "(" + op.get_lexeme() + " " + operand->to_string() + ")";
-#endif
                 }
         };
     }
