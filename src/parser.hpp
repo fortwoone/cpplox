@@ -19,6 +19,10 @@ namespace lox{
         using std::unitbuf;
         using std::vector;
 
+        namespace expr{
+
+        }
+
         void parse(const string& file_contents);
     }
 }
