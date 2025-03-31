@@ -125,6 +125,50 @@ namespace tokenizer{
         size_t char_count = file_contents.size();
         bool lexical_errors = false;
         for (const auto& byte: file_contents){
+            if (in_comment){
+                idx++;
+                if (byte == '\n'){
+                    line_count++;
+                    in_comment = false;
+                }
+                continue;  // Ignore characters until next line if in a comment.
+            }
+
+            // Check for comment start. If two slashes are found, immediately stop tokenising.
+            if (byte == '/'){
+                if (idx + 1 < char_count && file_contents[idx + 1] == '/'){
+                    // Comment start. Stop parsing and ignore all characters until the next line feed.
+                    in_comment = true;
+                    idx++;
+                    continue;
+                }
+            }
+
+            // Check for identifiers.
+            if (in_identifier){
+                if (priv::is_identifier_char(byte) || priv::is_digit(byte)){
+                    // Accept either ASCII, underscores or digits after the first character of an identifier.
+                    literal_str.push_back(byte);
+                    idx++;
+                    continue;
+                }
+                else{
+                    in_identifier = false;
+                    cout << "IDENTIFIER " << literal_str << " null" << endl;
+                }
+            }
+            else{
+                if (!in_string && !in_number){
+                    if (priv::is_identifier_char(byte)){
+                        in_identifier = true;
+                        literal_str.clear();
+                        literal_str.push_back(byte);
+                        idx++;
+                        continue;
+                    }
+                }
+            }
+
             // Check for number literals.
             if (in_number){
                 if (byte == '.'){  // Hit a dot.
@@ -186,52 +230,8 @@ namespace tokenizer{
                 idx++;
                 if (byte == '\n'){
                     line_count++;
-                    if (in_comment){
-                        // Comment state and found a line feed: resume parsing after the next character.
-                        in_comment = false;
-                    }
                 }
                 continue;
-            }
-
-            if (in_comment){
-                idx++;
-                continue;  // Ignore characters until next line if in a comment.
-            }
-
-            // Check for comment start. If two slashes are found, immediately stop tokenising.
-            if (byte == '/'){
-                if (idx + 1 < char_count && file_contents[idx + 1] == '/'){
-                    // Comment start. Stop parsing and ignore all characters until the next line feed.
-                    in_comment = true;
-                    idx++;
-                    continue;
-                }
-            }
-
-            // Check for identifiers.
-            if (in_identifier){
-                if (priv::is_identifier_char(byte) || priv::is_digit(byte)){
-                    // Accept either ASCII, underscores or digits after the first character of an identifier.
-                    literal_str.push_back(byte);
-                    idx++;
-                    continue;
-                }
-                else{
-                    in_identifier = false;
-                    cout << "IDENTIFIER " << literal_str << " null" << endl;
-                }
-            }
-            else{
-                if (!in_string && !in_number){
-                    if (priv::is_identifier_char(byte)){
-                        in_identifier = true;
-                        literal_str.clear();
-                        literal_str.push_back(byte);
-                        idx++;
-                        continue;
-                    }
-                }
             }
 
             if (byte == '"'){
