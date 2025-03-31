@@ -5,10 +5,8 @@
 #pragma once
 #include <algorithm>
 #include <cstdint>
-#include <cstring>
 #include <iomanip>
 #include <iostream>
-#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -21,19 +19,14 @@ namespace tokenizer{
     using std::endl;
     using std::exit;
     using std::fixed;
-    using std::out_of_range;
     using std::setprecision;
     using std::stoi;
     using std::stod;
-    using std::strcmp;
     using std::string;
     using std::unordered_map;
     using std::unordered_set;
 
     namespace priv{
-        string rtrim(const string& s);
-        string ltrim(const string& s);
-        string trim(const string& s);
         bool is_token(const char& c);
         string get_token_name(const char& c);
         bool is_complex_token(const char& c);

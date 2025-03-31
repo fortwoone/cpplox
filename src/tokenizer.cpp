@@ -59,26 +59,8 @@ namespace tokenizer{
                 {"while", "WHILE"}
         };
 
-        const string WHITESPACE = " \n\r\t\f\v";
-
         // endregion
 
-        string ltrim(const string &s)
-        {
-            size_t start = s.find_first_not_of(WHITESPACE);
-            return (start == string::npos) ? "" : s.substr(start);
-        }
-
-        string rtrim(const string &s)
-        {
-            size_t end = s.find_last_not_of(WHITESPACE);
-            return (end == string::npos) ? "" : s.substr(0, end + 1);
-        }
-
-        string trim(const string &s) {
-            return rtrim(ltrim(s));
-        }
-        
         bool is_token(const char& c){
 #if __cplusplus >= 202002L
             return _TOKEN_NAMES.contains(c);
@@ -124,10 +106,11 @@ namespace tokenizer{
         }
 
         bool is_reserved_kw(const string& literal_str){
+            cout << "DEBUG " << literal_str << "(end)" << endl;
 #if __cplusplus >= 202002L
-            return _RESERVED_KEYWORDS.contains(trim(literal_str));
+            return _RESERVED_KEYWORDS.contains(literal_str);
 #else
-            return _RESERVED_KEYWORDS.find(trim(literal_str)) != _RESERVED_KEYWORDS.end();
+            return _RESERVED_KEYWORDS.find(literal_str) != _RESERVED_KEYWORDS.end();
 #endif
         }
 
@@ -225,18 +208,12 @@ namespace tokenizer{
                 }
                 else{
                     in_identifier = false;
-                    try{
-                        cout << priv::get_kw_name(priv::trim(literal_str)) << " " << literal_str << " null" << endl;
+                    if (priv::is_reserved_kw(literal_str)){
+                        cout << priv::get_kw_name(literal_str) << " " << literal_str << " null" << endl;
                     }
-                    catch (const out_of_range& e){
+                    else{
                         cout << "IDENTIFIER " << literal_str << " null" << endl;
                     }
-//                    if (priv::is_reserved_kw(literal_str)){
-//                        cout << priv::get_kw_name(literal_str) << " " << literal_str << " null" << endl;
-//                    }
-//                    else{
-//                        cout << "IDENTIFIER " << literal_str << " null" << endl;
-//                    }
                 }
             }
             else{
