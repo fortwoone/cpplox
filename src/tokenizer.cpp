@@ -129,28 +129,24 @@ namespace tokenizer{
                                 in_number = false;
                                 cout << "NUMBER " << literal_str << " ";
                                 priv::display_number(literal_str);
-                                cout << endl;
                             }
                         }
                         else{  // There are no more characters after the dot.
                             in_number = false;
                             cout << "NUMBER " << literal_str << " ";
                             priv::display_number(literal_str);
-                            cout << endl;
                         }
                     }
                     else{  // It's the second dot hit while reading the literal.
                         in_number = false;
                         cout << "NUMBER " << literal_str << " ";
                         priv::display_number(literal_str);
-                        cout << endl;
                     }
                 }
                 else if (!priv::is_digit(byte)){  // The current character isn't a digit nor a dot.
                     in_number = false;
                     cout << "NUMBER " << literal_str << " ";
                     priv::display_number(literal_str);
-                    cout << endl;
                 }
                 else{  // The current character is a digit.
                     literal_str.push_back(byte);
