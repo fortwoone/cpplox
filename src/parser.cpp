@@ -77,7 +77,7 @@ namespace lox::parser{
             Token& op = previous();
             unique_ptr<ast::Expr> operand = get_unary();
             return make_unique<ast::UnaryExpr>(
-                ast::_TOKEN_TO_OP.at(op),
+                ast::_TOKEN_TO_OP.at(op.get_token_type()),
                 std::move(operand)
             );
         }
