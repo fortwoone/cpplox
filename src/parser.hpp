@@ -160,11 +160,11 @@ namespace lox::parser{
         vector<Token> tokens;
         size_t current_idx = 0;
 
-        [[nodiscard]] Token peek(){
+        [[nodiscard]] Token& peek(){
             return tokens.at(current_idx);
         }
 
-        [[nodiscard]] Token previous(){
+        [[nodiscard]] Token& previous(){
             return tokens.at(current_idx - 1);
         }
 
@@ -172,7 +172,7 @@ namespace lox::parser{
             return peek().get_token_type() == TokenType::EOF_TOKEN;
         }
 
-        Token advance();
+        Token& advance();
 
         [[nodiscard]] bool check(TokenType type);
 

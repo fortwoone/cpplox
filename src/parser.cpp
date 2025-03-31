@@ -12,7 +12,7 @@ namespace lox::parser{
         tokens = token_vec;
     }
 
-    Token Parser::advance(){
+    Token& Parser::advance(){
         if (!is_at_end()){
             current_idx++;
         }
@@ -74,7 +74,7 @@ namespace lox::parser{
     unique_ptr<ast::Expr> Parser::get_unary(){
         using enum TokenType;
         if (match({BANG, MINUS})){
-            Token op = previous();
+            Token& op = previous();
             unique_ptr<ast::Expr> operand = get_unary();
             return make_unique<ast::UnaryExpr>(
                 op,
@@ -90,7 +90,7 @@ namespace lox::parser{
         unique_ptr<ast::Expr> expr = get_unary();
 
         while (match({SLASH, STAR})){
-            Token oper = previous();
+            Token& oper = previous();
             unique_ptr<ast::Expr> right = get_unary();
             expr = make_unique<ast::BinaryExpr>(
                     std::move(expr),
@@ -107,7 +107,7 @@ namespace lox::parser{
         unique_ptr<ast::Expr> expr = get_factor();
 
         while (match({MINUS, PLUS})){
-            Token op = previous();
+            Token& op = previous();
             unique_ptr<ast::Expr> right = get_factor();
             expr = make_unique<ast::BinaryExpr>(
                 std::move(expr),
@@ -124,7 +124,7 @@ namespace lox::parser{
         unique_ptr<ast::Expr> expr = get_term();
 
         while (match({GREATER, GREATER_EQUAL, LESS, LESS_EQUAL})){
-            Token oper = previous();
+            Token& oper = previous();
             unique_ptr<ast::Expr> right = get_term();
             expr = make_unique<ast::BinaryExpr>(
                 std::move(expr),
@@ -141,7 +141,7 @@ namespace lox::parser{
         unique_ptr<ast::Expr> expr = get_comparison();
 
         while (match({BANG_EQUAL, EQUAL_EQUAL})){
-            Token oper = previous();
+            Token& oper = previous();
             unique_ptr<ast::Expr> right = get_comparison();
             expr = make_unique<ast::BinaryExpr>(
                 std::move(expr),
