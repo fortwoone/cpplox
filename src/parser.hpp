@@ -13,6 +13,7 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include <variant>
 #include <vector>
 
 
@@ -27,6 +28,9 @@ namespace lox::parser{
     using std::cout;
     using std::cerr;
     using std::endl;
+    using std::exception;
+    using std::get;
+    using std::holds_alternative;
     using std::initializer_list;
     using std::invalid_argument;
     using std::make_unique;
@@ -35,13 +39,31 @@ namespace lox::parser{
     using std::unique_ptr;
     using std::unitbuf;
     using std::unordered_map;
+    using std::variant;
     using std::vector;
 
+    class parse_error: public exception{
+        ubyte return_code;
+        const char* message;
+
+        public:
+            parse_error(ubyte return_code, const char* message): return_code(return_code), message(message){}
+            [[nodiscard]] const char* what() const noexcept override{
+                return message;
+            }
+            [[nodiscard]] ubyte get_return_code() const noexcept{
+                return return_code;
+            }
+    };
+
     namespace ast{
+        using EvalResult = variant<double, bool, string>;
+
         class Expr{
             public:
                 virtual ~Expr() = default;
                 [[nodiscard]] virtual string to_string() const = 0;
+                [[nodiscard]] virtual EvalResult evaluate() const = 0;
         };
 
         enum class LiteralExprType: ubyte{
@@ -80,6 +102,21 @@ namespace lox::parser{
                             return value;
                     }
                 };
+
+                [[nodiscard]] EvalResult evaluate() const final{
+                    switch (expr_type){
+                        case LiteralExprType::TRUE:
+                            return true;
+                        case LiteralExprType::FALSE:
+                            return false;
+                        case LiteralExprType::NIL:
+                            return "nil";
+                        case LiteralExprType::NUMBER:
+                            return stod(value);
+                        default:
+                            return value;
+                    }
+                }
         };
 
         enum class Operator: ubyte{
@@ -134,6 +171,62 @@ namespace lox::parser{
                 [[nodiscard]] string to_string() const final{
                     return "(" + _OP_TO_SYM.at(op) + " " + left->to_string() + " " + right->to_string() + ")";
                 }
+
+#               define as_double get<double>
+#               define as_bool get<bool>
+
+                [[nodiscard]] EvalResult evaluate() const final{
+                    using enum Operator;
+                    EvalResult left_result = left->evaluate(), right_result = right->evaluate();
+                    bool two_numbers = holds_alternative<double>(left_result) && holds_alternative<double>(right_result);
+                    bool two_bools = holds_alternative<bool>(left_result) && holds_alternative<bool>(right_result);
+
+                    switch (op){
+                        case PLUS:
+                            if (two_numbers){
+                                return as_double(left_result) + as_double(right_result);
+                            }
+                            break;
+                        case MINUS:
+                            if (two_numbers){
+                                return as_double(left_result) - as_double(right_result);
+                            }
+                            break;
+                        case STAR:
+                            if (two_numbers){
+                                return as_double(left_result) * as_double(right_result);
+                            }
+                            break;
+                        case SLASH:
+                            if (two_numbers){
+                                return as_double(left_result) / as_double(right_result);
+                            }
+                            break;
+                        case LESS:
+                            if (two_numbers){
+                                return as_double(left_result) < as_double(right_result);
+                            }
+                            break;
+                        case GREATER:
+                            if (two_numbers){
+                                return as_double(left_result) > as_double(right_result);
+                            }
+                            break;
+                        case LESS_EQUAL:
+                            if (two_numbers){
+                                return as_double(left_result) <= as_double(right_result);
+                            }
+                            break;
+                        case GREATER_EQUAL:
+                            if (two_numbers){
+                                return as_double(left_result) >= as_double(right_result);
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                    throw parse_error(70, "Unsupported operation.\0");
+                }
         };
 
         class GroupExpr: public Expr{
@@ -144,6 +237,10 @@ namespace lox::parser{
 
                 [[nodiscard]] string to_string() const final{
                     return "(group " + expr->to_string() + ")";
+                }
+
+                [[nodiscard]] EvalResult evaluate() const final{
+                    return expr->evaluate();
                 }
         };
 
@@ -156,6 +253,35 @@ namespace lox::parser{
 
                 [[nodiscard]] string to_string() const final{
                     return "(" + _OP_TO_SYM.at(op) + " " + operand->to_string() + ")";
+                }
+
+                [[nodiscard]] EvalResult evaluate() const final{
+                    EvalResult evaluated_operand = operand->evaluate();
+
+                    if (holds_alternative<bool>(evaluated_operand)){
+                        if (op == Operator::BANG){
+                            return !as_bool(evaluated_operand);
+                        }
+                    }
+                    else if (holds_alternative<double>(evaluated_operand)){
+                        switch (op){
+                            case Operator::MINUS:
+                                return -as_double(evaluated_operand);
+                            case Operator::BANG:
+                                return false;
+                            default:
+                                break;
+                        }
+                    }
+                    else{
+                        switch (op){
+                            case Operator::BANG:
+                                return get<string>(evaluated_operand) == "nil";
+                            default:
+                                break;
+                        }
+                    }
+                    throw parse_error(70, "Invalid operand for unary expression.\0");
                 }
         };
     }
@@ -210,9 +336,9 @@ namespace lox::parser{
         public:
             explicit Parser(vector<Token>& token_vec);
 
-            void parse();
+            unique_ptr<ast::Expr> parse();
 
     };
 
-    bool parse(const string& file_contents);
+    unique_ptr<ast::Expr> parse(const string& file_contents, bool* contains_errors);
 }

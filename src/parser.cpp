@@ -170,25 +170,25 @@ namespace lox::parser{
         }
     }
 
-    void Parser::parse(){
+    unique_ptr<ast::Expr> Parser::parse(){
         unique_ptr<ast::Expr> expr = get_expr();
-        cout << expr->to_string() << endl;
+        return std::move(expr);
     }
     // endregion
 
-    bool parse(const string& file_contents) {
-        bool contains_errors = false;
+    unique_ptr<ast::Expr> parse(const string& file_contents, bool* contains_errors) {
 
-        vector<Token> tokens = tokenize(file_contents, &contains_errors);
+        vector<Token> tokens = tokenize(file_contents, contains_errors);
 
         Parser parser = Parser(tokens);
 
         try{
-            parser.parse();
+            unique_ptr<ast::Expr> expr = std::move(parser.parse());
+            return std::move(expr);
         }
         catch (const invalid_argument& exc){
-            contains_errors = true;
+            (*contains_errors) = true;
         }
-        return contains_errors;
+        return nullptr;
     }
 }

@@ -54,7 +54,12 @@ int main(int argc, char *argv[]) {
     else if (command == "parse"){
         string file_contents = read_file_contents(argv[2]);
 
-        bool contains_errors = parse(file_contents);
+        bool contains_errors = false;
+
+        unique_ptr<ast::Expr> expr = parse(file_contents, &contains_errors);
+        if (expr != nullptr){
+            cout << expr->to_string() << endl;
+        }
         if (contains_errors)
             return 65;
     }
