@@ -338,7 +338,10 @@ namespace lox::parser{
 
             unique_ptr<ast::Expr> parse();
 
+            ubyte evaluate();
     };
 
-    unique_ptr<ast::Expr> parse(const string& file_contents, bool* contains_errors);
+    unique_ptr<ast::Expr> parse(const string& file_contents);
+
+    ubyte evaluate(const string& file_contents);
 }

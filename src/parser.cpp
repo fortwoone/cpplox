@@ -174,11 +174,36 @@ namespace lox::parser{
         unique_ptr<ast::Expr> expr = get_expr();
         return std::move(expr);
     }
+
+    ubyte Parser::evaluate(){
+        try{
+            unique_ptr<ast::Expr> expr = std::move(parse());
+            auto result = expr->evaluate();
+            if (holds_alternative<double>(result)){
+                cout << as_double(result) << endl;
+            }
+            else if (holds_alternative<bool>(result)){
+                cout << (as_bool(result) ? "true" : "false") << endl;
+            }
+            else{
+                cout << get<string>(result) << endl;
+            }
+            return 0;
+        }
+        catch (const parse_error& exc){
+            cerr << exc.what() << endl;
+            return exc.get_return_code();
+        }
+    }
     // endregion
 
-    unique_ptr<ast::Expr> parse(const string& file_contents, bool* contains_errors) {
+    unique_ptr<ast::Expr> parse(const string& file_contents) {
+        bool contains_errors = false;
 
-        vector<Token> tokens = tokenize(file_contents, contains_errors);
+        vector<Token> tokens = tokenize(file_contents, &contains_errors);
+        if (contains_errors){
+            throw parse_error(65, "Error while parsing (tokenising stage)\0");
+        }
 
         Parser parser = Parser(tokens);
 
@@ -187,8 +212,25 @@ namespace lox::parser{
             return std::move(expr);
         }
         catch (const invalid_argument& exc){
-            (*contains_errors) = true;
+            contains_errors = true;
+            throw parse_error(65, exc.what());
         }
-        return nullptr;
+    }
+
+    ubyte evaluate(const string& file_contents){
+        try{
+            bool contains_errors = true;
+            vector<Token> tokens = tokenize(file_contents, &contains_errors);
+            if (contains_errors){
+                throw parse_error(65, "Error while parsing (tokenising stage)\0");
+            }
+
+            Parser parser = Parser(tokens);
+            return parser.evaluate();
+        }
+        catch (const parse_error& exc){
+            cerr << exc.what() << endl;
+            return exc.get_return_code();
+        }
     }
 }
