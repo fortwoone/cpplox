@@ -137,6 +137,28 @@ namespace lox::parser{
                         return as_double(left_result) >= as_double(right_result);
                     }
                     break;
+                case EQUALITY:
+                    if (two_numbers){
+                        return as_double(left_result) == as_double(right_result);
+                    }
+                    else if (two_bools){
+                        return as_bool(left_result) == as_bool(right_result);
+                    }
+                    else if (two_strings){
+                        return as_string(left_result) == as_string(right_result);
+                    }
+                    return false;
+                case INEQUALITY:
+                    if (two_numbers){
+                        return as_double(left_result) != as_double(right_result);
+                    }
+                    else if (two_bools){
+                        return as_bool(left_result) != as_bool(right_result);
+                    }
+                    else if (two_strings){
+                        return as_string(left_result) != as_string(right_result);
+                    }
+                    return true;
                 default:
                     break;
             }
