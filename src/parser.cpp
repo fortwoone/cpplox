@@ -123,12 +123,16 @@ namespace lox::parser{
 
         while (match({GREATER, GREATER_EQUAL, LESS, LESS_EQUAL})){
             Token& oper = previous();
-            unique_ptr<ast::Expr> right = get_term();
-            expr = make_unique<ast::BinaryExpr>(
-                std::move(expr),
-                ast::_TOKEN_TO_OP.at(oper.get_token_type()),
-                std::move(right)
-            );
+            try{
+                unique_ptr<ast::Expr> right = get_term();
+                expr = make_unique<ast::BinaryExpr>(
+                    std::move(expr),
+                    ast::_TOKEN_TO_OP.at(oper.get_token_type()),
+                    std::move(right)
+                );
+            } catch(const invalid_argument& exc){
+                throw exc;
+            }
         }
 
         return expr;
@@ -140,19 +144,30 @@ namespace lox::parser{
 
         while (match({BANG_EQUAL, EQUAL_EQUAL})){
             Token& oper = previous();
-            unique_ptr<ast::Expr> right = get_comparison();
-            expr = make_unique<ast::BinaryExpr>(
-                std::move(expr),
-                ast::_TOKEN_TO_OP.at(oper.get_token_type()),
-                std::move(right)
-            );
+            try{
+                unique_ptr<ast::Expr> right = get_comparison();
+                expr = make_unique<ast::BinaryExpr>(
+                    std::move(expr),
+                    ast::_TOKEN_TO_OP.at(oper.get_token_type()),
+                    std::move(right)
+                );
+            }
+            catch (const invalid_argument& exc){
+                cerr << "Error: expected expression after operator." << endl;
+                throw exc;
+            }
         }
 
         return expr;
     }
 
     unique_ptr<ast::Expr> Parser::get_expr(){
-        return get_equality();
+        try{
+            return get_equality();
+        }
+        catch (const invalid_argument& exc){
+            throw exc;
+        }
     }
 
     void Parser::parse(){
@@ -161,13 +176,19 @@ namespace lox::parser{
     }
     // endregion
 
-    void parse(const string& file_contents) {
+    bool parse(const string& file_contents) {
         bool contains_errors = false;
 
         vector<Token> tokens = tokenize(file_contents, &contains_errors);
 
         Parser parser = Parser(tokens);
 
-        parser.parse();
+        try{
+            parser.parse();
+        }
+        catch (const invalid_argument& exc){
+            contains_errors = true;
+        }
+        return contains_errors;
     }
 }

@@ -25,6 +25,7 @@ namespace lox::parser{
 
     using std::any_of;
     using std::cout;
+    using std::cerr;
     using std::endl;
     using std::initializer_list;
     using std::invalid_argument;
@@ -213,5 +214,5 @@ namespace lox::parser{
 
     };
 
-    void parse(const string& file_contents);
+    bool parse(const string& file_contents);
 }
