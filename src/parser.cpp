@@ -6,6 +6,179 @@
 
 
 namespace lox::parser{
+#   define as_double get<double>
+#   define as_bool get<bool>
+#   define as_string get<string>
+
+    namespace ast{
+        // region AST constants
+        const unordered_map<TokenType, LiteralExprType> _TOKEN_TO_LITEXPRTP{
+            {TokenType::TRUE, LiteralExprType::TRUE},
+            {TokenType::FALSE, LiteralExprType::FALSE},
+            {TokenType::NIL, LiteralExprType::NIL},
+            {TokenType::STRING, LiteralExprType::STRING},
+            {TokenType::NUMBER, LiteralExprType::NUMBER},
+        };
+
+        const unordered_map<TokenType, Operator> _TOKEN_TO_OP{
+                {TokenType::PLUS, Operator::PLUS},
+                {TokenType::MINUS, Operator::MINUS},
+                {TokenType::STAR, Operator::STAR},
+                {TokenType::SLASH, Operator::SLASH},
+                {TokenType::BANG, Operator::BANG},
+                {TokenType::EQUAL_EQUAL, Operator::EQUALITY},
+                {TokenType::BANG_EQUAL, Operator::INEQUALITY},
+                {TokenType::LESS, Operator::LESS},
+                {TokenType::GREATER, Operator::GREATER},
+                {TokenType::LESS_EQUAL, Operator::LESS_EQUAL},
+                {TokenType::GREATER_EQUAL, Operator::GREATER_EQUAL},
+        };
+
+        const unordered_map<Operator, string> _OP_TO_SYM{
+                {Operator::PLUS, "+"},
+                {Operator::MINUS, "-"},
+                {Operator::STAR, "*"},
+                {Operator::SLASH, "/"},
+                {Operator::BANG, "!"},
+                {Operator::EQUALITY, "=="},
+                {Operator::INEQUALITY, "!="},
+                {Operator::LESS, "<"},
+                {Operator::GREATER, ">"},
+                {Operator::LESS_EQUAL, "<="},
+                {Operator::GREATER_EQUAL, ">="},
+        };
+        // endregion
+
+        // region LiteralExpr
+        string LiteralExpr::to_string() const{
+            switch (expr_type){
+                case LiteralExprType::TRUE:
+                    return "true";
+                case LiteralExprType::FALSE:
+                    return "false";
+                case LiteralExprType::NIL:
+                    return "nil";
+                default:
+                    return value;
+            }
+        }
+
+        EvalResult LiteralExpr::evaluate() const{
+            switch (expr_type){
+                case LiteralExprType::TRUE:
+                    return true;
+                case LiteralExprType::FALSE:
+                    return false;
+                case LiteralExprType::NIL:
+                    return "nil";
+                case LiteralExprType::NUMBER:
+                    return stod(value);
+                default:
+                    return value;
+            }
+        }
+        // endregion
+
+        // region BinaryExpr
+        string BinaryExpr::to_string() const{
+            return "(" + _OP_TO_SYM.at(op) + " " + left->to_string() + " " + right->to_string() + ")";
+        }
+
+        EvalResult BinaryExpr::evaluate() const{
+            using enum Operator;
+            EvalResult left_result = left->evaluate(), right_result = right->evaluate();
+            bool two_numbers = holds_alternative<double>(left_result) && holds_alternative<double>(right_result);
+            bool two_bools = holds_alternative<bool>(left_result) && holds_alternative<bool>(right_result);
+            bool two_strings = holds_alternative<string>(left_result) && holds_alternative<string>(right_result);
+
+            switch (op){
+                case PLUS:
+                    if (two_numbers){
+                        return as_double(left_result) + as_double(right_result);
+                    }
+                    else if (two_strings){
+                        ostringstream concat_stream;
+                        concat_stream << as_string(left_result) << as_string(right_result);
+                        return concat_stream.str();
+                    }
+                    break;
+                case MINUS:
+                    if (two_numbers){
+                        return as_double(left_result) - as_double(right_result);
+                    }
+                    break;
+                case STAR:
+                    if (two_numbers){
+                        return as_double(left_result) * as_double(right_result);
+                    }
+                    break;
+                case SLASH:
+                    if (two_numbers){
+                        return as_double(left_result) / as_double(right_result);
+                    }
+                    break;
+                case LESS:
+                    if (two_numbers){
+                        return as_double(left_result) < as_double(right_result);
+                    }
+                    break;
+                case GREATER:
+                    if (two_numbers){
+                        return as_double(left_result) > as_double(right_result);
+                    }
+                    break;
+                case LESS_EQUAL:
+                    if (two_numbers){
+                        return as_double(left_result) <= as_double(right_result);
+                    }
+                    break;
+                case GREATER_EQUAL:
+                    if (two_numbers){
+                        return as_double(left_result) >= as_double(right_result);
+                    }
+                    break;
+                default:
+                    break;
+            }
+            throw parse_error(70, "Unsupported operation.\0");
+        }
+        // endregion
+
+        // region UnaryExpr
+        string UnaryExpr::to_string() const{
+            return "(" + _OP_TO_SYM.at(op) + " " + operand->to_string() + ")";
+        }
+
+        EvalResult UnaryExpr::evaluate() const{
+            EvalResult evaluated_operand = operand->evaluate();
+
+            if (holds_alternative<bool>(evaluated_operand)){
+                if (op == Operator::BANG){
+                    return !as_bool(evaluated_operand);
+                }
+            }
+            else if (holds_alternative<double>(evaluated_operand)){
+                switch (op){
+                    case Operator::MINUS:
+                        return -as_double(evaluated_operand);
+                    case Operator::BANG:
+                        return false;
+                    default:
+                        break;
+                }
+            }
+            else{
+                switch (op){
+                    case Operator::BANG:
+                        return as_string(evaluated_operand) == "nil";
+                    default:
+                        break;
+                }
+            }
+            throw parse_error(70, "Invalid operand for unary expression.\0");
+        }
+        // endregion
+    }
 
     // region Parser
     Parser::Parser(vector<Token>& token_vec): tokens(std::move(token_vec)){}
@@ -186,7 +359,7 @@ namespace lox::parser{
                 cout << (as_bool(result) ? "true" : "false") << endl;
             }
             else{
-                cout << get<string>(result) << endl;
+                cout << as_string(result) << endl;
             }
             return 0;
         }
