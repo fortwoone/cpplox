@@ -455,12 +455,7 @@ namespace lox::parser{
     ExprPtr parse(const string& file_contents) {
         bool contains_errors = false;
 
-        vector<Token> tokens = tokenize(file_contents, &contains_errors);
-        if (contains_errors){
-            throw parse_error(65, "Error while parsing (tokenising stage)\0");
-        }
-
-        Parser parser = Parser(tokens);
+        Parser parser = Parser(tokenize(file_contents, &contains_errors));
 
         try{
             ExprPtr expr = parser.parse_old();
