@@ -161,7 +161,7 @@ namespace lox::parser{
                     return true;
                 default:
                     throw parse_error(70, "Unsupported operation.\0");
-            },
+            }
             throw parse_error(70, "Unsupported operation.\0");
         }
         // endregion
