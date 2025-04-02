@@ -15,13 +15,8 @@ namespace lox::interpreter{
     Interpreter::Interpreter(const vector<StmtPtr>& statements): statements(statements){}
 
     void Interpreter::run(){
-        try{
-            for (const auto& stmt: statements){
-                stmt->execute();
-            }
-        }
-        catch (const exception& exc){
-            throw runtime_error(exc.what());
+        for (const auto& stmt: statements){
+            stmt->execute();
         }
     }
 
