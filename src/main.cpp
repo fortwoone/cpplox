@@ -4,6 +4,7 @@
 #include <vector>
 #include "tokenizer.hpp"
 #include "parser.hpp"
+#include "interpreter.hpp"
 
 // region Using directives
 using std::cout;
@@ -55,7 +56,7 @@ int main(int argc, char *argv[]) {
         string file_contents = read_file_contents(argv[2]);
 
         try{
-            unique_ptr<ast::Expr> expr = parse(file_contents);
+            ExprPtr expr = parse(file_contents);
             cout << expr->to_string() << endl;
         }
         catch (lox::parser::parse_error& exc){
@@ -66,6 +67,11 @@ int main(int argc, char *argv[]) {
     else if (command == "evaluate"){
         string file_contents = read_file_contents(argv[2]);
         return lox::parser::evaluate(file_contents);
+    }
+    else if (command == "run"){
+        string file_contents = read_file_contents(argv[2]);
+        lox::interpreter::run(file_contents);
+        return 0;
     }
     else{
         cerr << "Unknown command: " << command << endl;

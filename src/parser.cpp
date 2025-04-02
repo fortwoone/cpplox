@@ -200,10 +200,31 @@ namespace lox::parser{
             throw parse_error(70, "Invalid operand for unary expression.\0");
         }
         // endregion
+
+        // region ExprStatement
+        void ExprStatement::execute() const{
+            EvalResult result = expr->evaluate();
+        }
+        // endregion
+
+        // region PrintStatement
+        void PrintStatement::execute() const{
+            EvalResult result = expr->evaluate();
+            if (holds_alternative<bool>(result)){
+                cout << (as_bool(result) ? "true" : "false") << endl;
+            }
+            else if (holds_alternative<double>(result)){
+                cout << as_double(result) << endl;
+            }
+            else{
+                cout << as_string(result) << endl;
+            }
+        }
+        // endregion
     }
 
     // region Parser
-    Parser::Parser(vector<Token>& token_vec): tokens(std::move(token_vec)){}
+    Parser::Parser(vector<Token>& token_vec): tokens(token_vec){}
 
     Token& Parser::advance(){
         if (!is_at_end()){
@@ -233,21 +254,21 @@ namespace lox::parser{
         return ret;
     }
 
-    unique_ptr<ast::Expr> Parser::get_primary(){
+    ExprPtr Parser::get_primary(){
         using enum TokenType;
         using ast::LiteralExprType;
         if (match(FALSE)){
-            return make_unique<ast::LiteralExpr>(LiteralExprType::FALSE);
+            return make_shared<ast::LiteralExpr>(LiteralExprType::FALSE);
         }
         if (match(TRUE)){
-            return make_unique<ast::LiteralExpr>(LiteralExprType::TRUE);
+            return make_shared<ast::LiteralExpr>(LiteralExprType::TRUE);
         }
         if (match(NIL)){
-            return make_unique<ast::LiteralExpr>(LiteralExprType::NIL);
+            return make_shared<ast::LiteralExpr>(LiteralExprType::NIL);
         }
 
         if (match({NUMBER, STRING})){
-            return make_unique<ast::LiteralExpr>(
+            return make_shared<ast::LiteralExpr>(
                     ast::_TOKEN_TO_LITEXPRTP.at(
                             previous().get_token_type()
                     ),
@@ -256,74 +277,74 @@ namespace lox::parser{
         }
 
         if (match(LEFT_PAREN)){
-            unique_ptr<ast::Expr> ptr = get_expr();
+            ExprPtr ptr = get_expr();
             consume(RIGHT_PAREN, "Expected ')' after expression.");
-            return make_unique<ast::GroupExpr>(std::move(ptr));
+            return make_shared<ast::GroupExpr>(ptr);
         }
 
         throw invalid_argument("No match was made.");
     }
 
-    unique_ptr<ast::Expr> Parser::get_unary(){
+    ExprPtr Parser::get_unary(){
         using enum TokenType;
         if (match({BANG, MINUS})){
             Token& op = previous();
-            unique_ptr<ast::Expr> operand = get_unary();
-            return make_unique<ast::UnaryExpr>(
+            ExprPtr operand = get_unary();
+            return make_shared<ast::UnaryExpr>(
                 ast::_TOKEN_TO_OP.at(op.get_token_type()),
-                std::move(operand)
+                operand
             );
         }
 
         return get_primary();
     }
 
-    unique_ptr<ast::Expr> Parser::get_factor(){
+    ExprPtr Parser::get_factor(){
         using enum TokenType;
-        unique_ptr<ast::Expr> expr = get_unary();
+        ExprPtr expr = get_unary();
 
         while (match({SLASH, STAR})){
             Token& oper = previous();
-            unique_ptr<ast::Expr> right = get_unary();
-            expr = make_unique<ast::BinaryExpr>(
-                    std::move(expr),
+            ExprPtr right = get_unary();
+            expr = make_shared<ast::BinaryExpr>(
+                    expr,
                     ast::_TOKEN_TO_OP.at(oper.get_token_type()),
-                    std::move(right)
+                    right
             );
         }
 
         return expr;
     }
 
-    unique_ptr<ast::Expr> Parser::get_term(){
+    ExprPtr Parser::get_term(){
         using enum TokenType;
-        unique_ptr<ast::Expr> expr = get_factor();
+        ExprPtr expr = get_factor();
 
         while (match({MINUS, PLUS})){
             Token& op = previous();
-            unique_ptr<ast::Expr> right = get_factor();
-            expr = make_unique<ast::BinaryExpr>(
-                std::move(expr),
+            ExprPtr right = get_factor();
+            expr = make_shared<ast::BinaryExpr>(
+                expr,
                 ast::_TOKEN_TO_OP.at(op.get_token_type()),
-                std::move(right)
+                right
             );
         }
 
         return expr;
     }
 
-    unique_ptr<ast::Expr> Parser::get_comparison(){
+    ExprPtr Parser::get_comparison(){
         using enum TokenType;
-        unique_ptr<ast::Expr> expr = get_term();
+        ExprPtr expr = get_term();
 
         while (match({GREATER, GREATER_EQUAL, LESS, LESS_EQUAL})){
             Token& oper = previous();
             try{
-                unique_ptr<ast::Expr> right = get_term();
-                expr = make_unique<ast::BinaryExpr>(
-                    std::move(expr),
+                ExprPtr right = get_term();
+                expr = make_shared<ast::BinaryExpr>(
+                    expr,
                     ast::_TOKEN_TO_OP.at(oper.get_token_type()),
-                    std::move(right)
+                    right
                 );
             } catch(const invalid_argument& exc){
                 throw exc;
@@ -333,18 +354,18 @@ namespace lox::parser{
         return expr;
     }
 
-    unique_ptr<ast::Expr> Parser::get_equality(){
+    ExprPtr Parser::get_equality(){
         using enum TokenType;
-        unique_ptr<ast::Expr> expr = get_comparison();
+        ExprPtr expr = get_comparison();
 
         while (match({BANG_EQUAL, EQUAL_EQUAL})){
             Token& oper = previous();
             try{
-                unique_ptr<ast::Expr> right = get_comparison();
-                expr = make_unique<ast::BinaryExpr>(
-                    std::move(expr),
+                ExprPtr right = get_comparison();
+                expr = make_shared<ast::BinaryExpr>(
+                    expr,
                     ast::_TOKEN_TO_OP.at(oper.get_token_type()),
-                    std::move(right)
+                    right
                 );
             }
             catch (const invalid_argument& exc){
@@ -356,7 +377,7 @@ namespace lox::parser{
         return expr;
     }
 
-    unique_ptr<ast::Expr> Parser::get_expr(){
+    ExprPtr Parser::get_expr(){
         try{
             return get_equality();
         }
@@ -365,14 +386,45 @@ namespace lox::parser{
         }
     }
 
-    unique_ptr<ast::Expr> Parser::parse(){
-        unique_ptr<ast::Expr> expr = get_expr();
-        return std::move(expr);
+    ExprPtr Parser::parse_old(){
+        ExprPtr expr = get_expr();
+        return expr;
+    }
+
+    StmtPtr Parser::get_print_statement(){
+        ExprPtr val = get_expr();
+        consume(TokenType::SEMICOLON, "Expected ';' after value.");
+        return make_shared<ast::PrintStatement>(
+            val
+        );
+    }
+
+    StmtPtr Parser::get_expr_statement(){
+        ExprPtr val = get_expr();
+        consume(TokenType::SEMICOLON, "Expected ';' after expression.");
+        return make_shared<ast::ExprStatement>(val);
+    }
+
+    StmtPtr Parser::get_statement(){
+        if (match(TokenType::PRINT)){
+            return get_print_statement();
+        }
+        return get_expr_statement();
+    }
+
+    vector<StmtPtr> Parser::parse(){
+        vector<StmtPtr> statements;
+        while (!is_at_end()){
+            statements.push_back(
+                get_statement()
+            );
+        }
+        return statements;
     }
 
     ubyte Parser::evaluate(){
         try{
-            unique_ptr<ast::Expr> expr = std::move(parse());
+            ExprPtr expr = parse_old();
             auto result = expr->evaluate();
             if (holds_alternative<double>(result)){
                 cout << as_double(result) << endl;
@@ -392,7 +444,7 @@ namespace lox::parser{
     }
     // endregion
 
-    unique_ptr<ast::Expr> parse(const string& file_contents) {
+    ExprPtr parse(const string& file_contents) {
         bool contains_errors = false;
 
         vector<Token> tokens = tokenize(file_contents, &contains_errors);
@@ -403,8 +455,8 @@ namespace lox::parser{
         Parser parser = Parser(tokens);
 
         try{
-            unique_ptr<ast::Expr> expr = std::move(parser.parse());
-            return std::move(expr);
+            ExprPtr expr = parser.parse_old();
+            return expr;
         }
         catch (const invalid_argument& exc){
             contains_errors = true;

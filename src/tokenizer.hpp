@@ -157,7 +157,7 @@ namespace lox{
 
                     Token& operator=(Token&& other) noexcept{
                         swap(literal, other.literal);
-                        token_type = std::move(other.token_type);
+                        token_type = other.token_type;
                         lexeme = std::move(other.lexeme);
 
                         return *this;

@@ -34,11 +34,11 @@ namespace lox::parser{
     using std::holds_alternative;
     using std::initializer_list;
     using std::invalid_argument;
-    using std::make_unique;
+    using std::make_shared;
     using std::move;
     using std::ostringstream;
     using std::string;
-    using std::unique_ptr;
+    using std::shared_ptr;
     using std::unitbuf;
     using std::unordered_map;
     using std::variant;
@@ -61,6 +61,7 @@ namespace lox::parser{
     namespace ast{
         using EvalResult = variant<double, bool, string>;
 
+        // region Expressions
         class Expr{
             public:
                 virtual ~Expr() = default;
@@ -84,8 +85,8 @@ namespace lox::parser{
             public:
                 LiteralExprType expr_type;
 
-                explicit LiteralExpr(LiteralExprType type): expr_type(type), value(""){}
-                explicit LiteralExpr(LiteralExprType type, const string& value): expr_type(type), value(value){}
+                explicit LiteralExpr(LiteralExprType type): expr_type(type){}
+                explicit LiteralExpr(LiteralExprType type, string value): expr_type(type), value(std::move(value)){}
 
                 [[nodiscard]] string to_string() const final;
                 [[nodiscard]] EvalResult evaluate() const final;
@@ -107,9 +108,9 @@ namespace lox::parser{
 
         class BinaryExpr: public Expr{
             public:
-                unique_ptr<Expr> left, right;
+                shared_ptr<Expr> left, right;
                 Operator op;
-                BinaryExpr(unique_ptr<Expr> left, Operator op, unique_ptr<Expr> right)
+                BinaryExpr(shared_ptr<Expr> left, Operator op, shared_ptr<Expr> right)
                     : left(std::move(left)), op(op), right(std::move(right)){}
 
                 [[nodiscard]] string to_string() const final;
@@ -119,9 +120,9 @@ namespace lox::parser{
 
         class GroupExpr: public Expr{
             public:
-                unique_ptr<Expr> expr;
+                shared_ptr<Expr> expr;
 
-                explicit GroupExpr(unique_ptr<Expr> expression): expr(std::move(expression)){}
+                explicit GroupExpr(shared_ptr<Expr> expression): expr(std::move(expression)){}
 
                 [[nodiscard]] string to_string() const final{
                     return "(group " + expr->to_string() + ")";
@@ -135,15 +136,44 @@ namespace lox::parser{
         class UnaryExpr: public Expr{
             public:
                 Operator op;
-                unique_ptr<Expr> operand;
+                shared_ptr<Expr> operand;
 
-                UnaryExpr(Operator operat, unique_ptr<Expr> expression): op(operat), operand(std::move(expression)){}
+                UnaryExpr(Operator operat, shared_ptr<Expr> expression): op(operat), operand(std::move(expression)){}
 
                 [[nodiscard]] string to_string() const final;
 
                 [[nodiscard]] EvalResult evaluate() const final;
         };
+        // endregion
+
+        // Base class for statements. A statement is an instruction executed by the interpreter.
+        class Statement{
+            protected:
+                shared_ptr<Expr> expr;
+
+            public:
+                explicit Statement(shared_ptr<Expr> expr): expr(std::move(expr)){}
+                virtual ~Statement() = default;
+                virtual void execute() const = 0;
+        };
+
+        class ExprStatement: public Statement{
+            public:
+                explicit ExprStatement(shared_ptr<Expr> expr): Statement(std::move(expr)){}
+
+                void execute() const final;
+        };
+
+        class PrintStatement: public Statement{
+            public:
+                explicit PrintStatement(shared_ptr<Expr> expr): Statement(std::move(expr)){}
+
+                void execute() const final;
+        };
     }
+
+    using ExprPtr = shared_ptr<ast::Expr>;
+    using StmtPtr = shared_ptr<ast::Statement>;
 
     class Parser{
         vector<Token> tokens;
@@ -171,19 +201,27 @@ namespace lox::parser{
             return match({tp});
         }
 
-        [[nodiscard]] unique_ptr<ast::Expr> get_expr();
+        // region Expression methods
+        [[nodiscard]] ExprPtr get_expr();
 
-        [[nodiscard]] unique_ptr<ast::Expr> get_equality();
+        [[nodiscard]] ExprPtr get_equality();
 
-        [[nodiscard]] unique_ptr<ast::Expr> get_comparison();
+        [[nodiscard]] ExprPtr get_comparison();
 
-        [[nodiscard]] unique_ptr<ast::Expr> get_term();
+        [[nodiscard]] ExprPtr get_term();
 
-        [[nodiscard]] unique_ptr<ast::Expr> get_factor();
+        [[nodiscard]] ExprPtr get_factor();
 
-        [[nodiscard]] unique_ptr<ast::Expr> get_unary();
+        [[nodiscard]] ExprPtr get_unary();
 
-        [[nodiscard]] unique_ptr<ast::Expr> get_primary();
+        [[nodiscard]] ExprPtr get_primary();
+        // endregion
+
+        // region Statement methods
+        [[nodiscard]] StmtPtr get_print_statement();
+        [[nodiscard]] StmtPtr get_expr_statement();
+        [[nodiscard]] StmtPtr get_statement();
+        // endregion
 
         Token& consume(TokenType token_type, const string& message){
             if (check(token_type)){
@@ -195,12 +233,13 @@ namespace lox::parser{
         public:
             explicit Parser(vector<Token>& token_vec);
 
-            unique_ptr<ast::Expr> parse();
+            ExprPtr parse_old();
+            vector<StmtPtr> parse();
 
             ubyte evaluate();
     };
 
-    unique_ptr<ast::Expr> parse(const string& file_contents);
+    ExprPtr parse(const string& file_contents);
 
     ubyte evaluate(const string& file_contents);
 }
