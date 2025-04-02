@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "tokenizer.hpp"
 #include "parser.hpp"
 #include <stdexcept>
 #include <string>

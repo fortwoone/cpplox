@@ -231,7 +231,7 @@ namespace lox::parser{
         }
 
         public:
-            explicit Parser(vector<Token>& token_vec);
+            explicit Parser(vector<Token> token_vec);
 
             ExprPtr parse_old();
             vector<StmtPtr> parse();

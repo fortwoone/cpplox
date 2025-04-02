@@ -7,12 +7,8 @@
 namespace lox::interpreter{
     Interpreter::Interpreter(const string& file_contents){
         bool contains_errors = false;
-        vector<Token> tokenised = tokenize(file_contents, &contains_errors);
-        if (contains_errors){
-            throw parse_error(65, "Error while parsing file (tokenising stage)\0");
-        }
 
-        Parser parser = Parser(tokenised);
+        Parser parser = Parser(tokenize(file_contents, &contains_errors));
         statements = parser.parse();
     }
 

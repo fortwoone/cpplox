@@ -19,6 +19,7 @@ using std::vector;
 
 using namespace lox::tokenizer;
 using namespace lox::parser;
+using namespace lox::interpreter;
 // endregion
 
 string read_file_contents(const string& filename);
@@ -32,7 +33,7 @@ int main(int argc, char *argv[]) {
     cerr << "Logs from your program will appear here!" << endl;
 
     if (argc < 3) {
-        cerr << "Usage: ./your_program tokenize|parse <filename>" << endl;
+        cerr << "Usage: ./your_program tokenize|parse|run <filename>" << endl;
         return 1;
     }
 
