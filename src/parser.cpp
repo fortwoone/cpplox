@@ -121,22 +121,30 @@ namespace lox::parser{
                     if (two_numbers){
                         return as_double(left_result) < as_double(right_result);
                     }
-                    break;
+                    else{
+                        throw parse_error(70, "Unsupported operation.\0");
+                    }
                 case GREATER:
                     if (two_numbers){
                         return as_double(left_result) > as_double(right_result);
                     }
-                    break;
+                    else{
+                        throw parse_error(70, "Unsupported operation.\0");
+                    }
                 case LESS_EQUAL:
                     if (two_numbers){
                         return as_double(left_result) <= as_double(right_result);
                     }
-                    break;
+                    else{
+                        throw parse_error(70, "Unsupported operation.\0");
+                    }
                 case GREATER_EQUAL:
                     if (two_numbers){
                         return as_double(left_result) >= as_double(right_result);
                     }
-                    break;
+                    else {
+                        throw parse_error(70, "Unsupported operation.\0");
+                    }
                 case EQUALITY:
                     if (two_numbers){
                         return as_double(left_result) == as_double(right_result);
