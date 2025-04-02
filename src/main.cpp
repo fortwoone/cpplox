@@ -71,7 +71,13 @@ int main(int argc, char *argv[]) {
     }
     else if (command == "run"){
         string file_contents = read_file_contents(argv[2]);
-        lox::interpreter::run(file_contents);
+        try{
+            lox::interpreter::run(file_contents);
+        }
+        catch (const parse_error& exc){
+            cerr << exc.what() << endl;
+            return exc.get_return_code();
+        }
         return 0;
     }
     else{

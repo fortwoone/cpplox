@@ -282,7 +282,7 @@ namespace lox::parser{
             return make_shared<ast::GroupExpr>(ptr);
         }
 
-        throw invalid_argument("No match was made.");
+        throw parse_error(65, "There is no literal to parse.");
     }
 
     ExprPtr Parser::get_unary(){
