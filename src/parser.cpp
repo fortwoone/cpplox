@@ -475,12 +475,8 @@ namespace lox::parser{
     ubyte evaluate(const string& file_contents){
         try{
             bool contains_errors = true;
-            vector<Token> tokens = tokenize(file_contents, &contains_errors);
-            if (contains_errors){
-                throw parse_error(65, "Error while parsing (tokenising stage)\0");
-            }
 
-            Parser parser = Parser(tokens);
+            Parser parser = Parser(tokenize(file_contents, &contains_errors));
             return parser.evaluate();
         }
         catch (const parse_error& exc){
