@@ -4,6 +4,7 @@
 
 #pragma once
 #include "tokenizer.hpp"
+#include "env.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <initializer_list>
@@ -21,6 +22,7 @@
 namespace lox::parser{
     using ubyte = uint8_t;
 
+    using lox::env::Environment;
     using lox::tokenizer::token::Token;
     using lox::tokenizer::token::TokenType;
     using lox::tokenizer::tokenize;
@@ -59,7 +61,7 @@ namespace lox::parser{
     };
 
     namespace ast{
-        using EvalResult = variant<double, bool, string>;
+        using EvalResult = lox::env::VarValue;
 
         // region Expressions
         class Expr{
@@ -144,6 +146,22 @@ namespace lox::parser{
 
                 [[nodiscard]] EvalResult evaluate() const final;
         };
+
+        class VariableExpr: public Expr{
+            string name;
+            shared_ptr<Environment> env;
+
+            public:
+                explicit VariableExpr(const Token& id_token, const shared_ptr<Environment>& env);
+
+                [[nodiscard]] string get_name() const{
+                    return name;
+                }
+
+                [[nodiscard]] string to_string() const final;
+
+                [[nodiscard]] EvalResult evaluate() const final;
+        };
         // endregion
 
         // Base class for statements. A statement is an instruction executed by the interpreter.
@@ -170,6 +188,23 @@ namespace lox::parser{
 
                 void execute() const final;
         };
+
+        class VariableStatement: public Statement{
+            string name;
+
+            public:
+                explicit VariableStatement(const string& name, shared_ptr<Expr> init_expr);
+
+                [[nodiscard]] string get_name() const{
+                    return name;
+                }
+
+                [[nodiscard]] shared_ptr<Expr> get_initialiser() const{
+                    return expr;
+                }
+
+                void execute() const final;
+        };
     }
 
     using ExprPtr = shared_ptr<ast::Expr>;
@@ -177,6 +212,7 @@ namespace lox::parser{
 
     class Parser{
         vector<Token> tokens;
+        shared_ptr<Environment> env;
         size_t current_idx = 0;
 
         [[nodiscard]] Token& peek(){
@@ -221,6 +257,8 @@ namespace lox::parser{
         [[nodiscard]] StmtPtr get_print_statement();
         [[nodiscard]] StmtPtr get_expr_statement();
         [[nodiscard]] StmtPtr get_statement();
+        [[nodiscard]] StmtPtr get_var_declaration();
+        [[nodiscard]] StmtPtr get_declaration();
         // endregion
 
         Token& consume(TokenType token_type, const string& message){
@@ -232,6 +270,7 @@ namespace lox::parser{
 
         public:
             explicit Parser(vector<Token> token_vec);
+            Parser(vector<Token> token_vec, const shared_ptr<Environment>& env);
 
             ExprPtr parse_old();
             vector<StmtPtr> parse();

@@ -209,6 +209,26 @@ namespace lox::parser{
         }
         // endregion
 
+        // region VariableExpr
+        VariableExpr::VariableExpr(const Token& id_token, const shared_ptr<Environment>& env): env(env){
+            if (id_token.get_token_type() != TokenType::IDENTIFIER){
+                throw parse_error(65, "Invalid token type for variable expression.");
+            }
+            name = id_token.get_lexeme();
+        }
+
+        string VariableExpr::to_string() const{
+            return name;
+        }
+
+        EvalResult VariableExpr::evaluate() const{
+            if (env == nullptr){
+                return name;
+            }
+            return env->get(name);
+        }
+        // endregion
+
         // region ExprStatement
         void ExprStatement::execute() const{
             EvalResult result = expr->evaluate();
@@ -229,10 +249,20 @@ namespace lox::parser{
             }
         }
         // endregion
+
+        // region VariableStatement
+        VariableStatement::VariableStatement(const string& name, shared_ptr<Expr> init_expr): name(name), Statement(init_expr){}  // NOLINT
+
+        void VariableStatement::execute() const{
+            // Does nothing. Only exists for RTTI purposes. The interpreter will be the actual one doing the variable setting.
+        }
+        // endregion
     }
 
     // region Parser
-    Parser::Parser(vector<Token> token_vec): tokens(std::move(token_vec)){}
+    Parser::Parser(vector<Token> token_vec): tokens(std::move(token_vec)), env{nullptr}{}
+
+    Parser::Parser(vector<Token> token_vec, const shared_ptr<Environment>& env): tokens(std::move(token_vec)), env(env){}
 
     Token& Parser::advance(){
         if (!is_at_end()){
@@ -273,6 +303,10 @@ namespace lox::parser{
         }
         if (match(NIL)){
             return make_shared<ast::LiteralExpr>(LiteralExprType::NIL);
+        }
+
+        if (match(IDENTIFIER)){
+            return make_shared<ast::VariableExpr>(previous(), env);
         }
 
         if (match({NUMBER, STRING})){
@@ -420,11 +454,33 @@ namespace lox::parser{
         return get_expr_statement();
     }
 
+    StmtPtr Parser::get_var_declaration(){
+        Token& name = consume(TokenType::IDENTIFIER, "Expected a variable name.");
+
+        ExprPtr init = nullptr;
+        if (match(TokenType::EQUAL)){
+            init = get_expr();
+        }
+
+        consume(TokenType::SEMICOLON, "Expected ';' after variable declaration.");
+        return make_shared<ast::VariableStatement>(
+            name.get_lexeme(),
+            init
+        );
+    }
+
+    StmtPtr Parser::get_declaration(){
+        if (match(TokenType::VAR)){
+            return get_var_declaration();
+        }
+        return get_statement();
+    }
+
     vector<StmtPtr> Parser::parse(){
         vector<StmtPtr> statements;
         while (!is_at_end()){
             statements.push_back(
-                get_statement()
+                get_declaration()
             );
         }
         return statements;
