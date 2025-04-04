@@ -250,6 +250,8 @@ namespace lox::parser{
             public:
                 explicit BlockStatement(vector<shared_ptr<Statement>> statements, const shared_ptr<Environment>& env);
 
+                void set_env(const shared_ptr<Environment>& new_env);
+
                 void execute() const final;
         };
     }

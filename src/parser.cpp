@@ -291,8 +291,16 @@ namespace lox::parser{
             env->set(var_stmt->get_name(), val);
         }
 
+        void BlockStatement::set_env(const shared_ptr<Environment>& new_env){
+            env = make_shared<Environment>(new_env);
+        }
+
         void BlockStatement::execute() const{
             for (const auto& stmt: statements){
+                auto as_block_stmt = dynamic_pointer_cast<BlockStatement>(stmt);
+                if (as_block_stmt != nullptr){
+                    as_block_stmt->set_env(env); // Allow for deeply nested blocks.
+                }
                 auto as_swe_ptr = dynamic_pointer_cast<StatementWithExpr>(stmt);
                 if (as_swe_ptr != nullptr){
                     auto as_var_expr = dynamic_pointer_cast<AbstractVarExpr>(as_swe_ptr->get_expr());
