@@ -30,6 +30,7 @@ namespace lox::parser{
     using std::any_of;
     using std::cout;
     using std::cerr;
+    using std::dynamic_pointer_cast;
     using std::endl;
     using std::exception;
     using std::get;
@@ -162,6 +163,27 @@ namespace lox::parser{
 
                 [[nodiscard]] EvalResult evaluate() const final;
         };
+
+        class AssignmentExpr: public Expr{
+            string name;
+            shared_ptr<Expr> value;
+            shared_ptr<Environment> env;
+
+            public:
+                AssignmentExpr(string name, shared_ptr<Expr> value, const shared_ptr<Environment>& env);
+
+                [[nodiscard]] string get_name() const{
+                    return name;
+                };
+
+                [[nodiscard]] shared_ptr<Expr> get_value() const{
+                    return value;
+                };
+
+                [[nodiscard]] string to_string() const final;
+
+                [[nodiscard]] EvalResult evaluate() const final;
+        };
         // endregion
 
         // Base class for statements. A statement is an instruction executed by the interpreter.
@@ -239,6 +261,8 @@ namespace lox::parser{
 
         // region Expression methods
         [[nodiscard]] ExprPtr get_expr();
+
+        [[nodiscard]] ExprPtr get_assignment();
 
         [[nodiscard]] ExprPtr get_equality();
 

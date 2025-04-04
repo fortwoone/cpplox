@@ -4,6 +4,8 @@
 
 #include "parser.hpp"
 
+#include <utility>
+
 
 namespace lox::parser{
 #   define as_double get<double>
@@ -231,6 +233,21 @@ namespace lox::parser{
         }
         // endregion
 
+        // region AssignmentExpr
+        AssignmentExpr::AssignmentExpr(string name, shared_ptr<Expr> value, const shared_ptr<Environment>& env)
+        : name(std::move(name)), value(std::move(value)), env(env){}
+
+        string AssignmentExpr::to_string() const{
+            return name;
+        }
+
+        EvalResult AssignmentExpr::evaluate() const{
+            EvalResult val = value->evaluate();
+            env->assign(name, val);
+            return val;
+        }
+        // endregion
+
         // region ExprStatement
         void ExprStatement::execute() const{
             EvalResult result = expr->evaluate();
@@ -423,9 +440,32 @@ namespace lox::parser{
         return expr;
     }
 
+    ExprPtr Parser::get_assignment(){
+        using ast::VariableExpr;
+        ExprPtr expr = get_equality();
+
+        if (match(TokenType::EQUAL)){
+            Token& equals = previous();
+            ExprPtr value = get_assignment();
+
+            auto as_var_expr = dynamic_pointer_cast<VariableExpr>(expr);
+            if (as_var_expr != nullptr){
+                return make_shared<ast::AssignmentExpr>(
+                    as_var_expr->get_name(),
+                    value,
+                    env
+                );
+            }
+
+            throw parse_error(65, "Invalid assignment target.");
+        }
+
+        return expr;
+    }
+
     ExprPtr Parser::get_expr(){
         try{
-            return get_equality();
+            return get_assignment();
         }
         catch (const invalid_argument& exc){
             throw exc;

@@ -24,5 +24,7 @@ namespace lox::env{
             VarValue get(const string& name);
 
             void set(const string& name, VarValue val);
+
+            void assign(const string& name, VarValue val);
     };
 }

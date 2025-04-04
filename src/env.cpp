@@ -4,6 +4,8 @@
 
 #include "env.hpp"
 
+#include <utility>
+
 namespace lox::env{
     VarValue Environment::get(const string& name){
         try{
@@ -16,5 +18,12 @@ namespace lox::env{
 
     void Environment::set(const string& name, VarValue value){
         vars.insert_or_assign(name, value);
+    }
+
+    void Environment::assign(const string& name, VarValue value){
+        if (!vars.contains(name)){
+            throw runtime_error("Undefined variable '" + name + "'");
+        }
+        vars[name] = std::move(value);
     }
 }
