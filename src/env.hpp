@@ -3,12 +3,14 @@
 //
 
 #pragma once
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <variant>
 
 namespace lox::env{
+    using std::shared_ptr;
     using std::out_of_range;
     using std::runtime_error;
     using std::string;
@@ -19,9 +21,14 @@ namespace lox::env{
 
     class Environment{
         unordered_map<string, VarValue> vars;
+        shared_ptr<Environment> enclosing; // Reference to parent environment for local scopes.
 
         public:
-            VarValue get(const string& name);
+            Environment();
+
+            explicit Environment(const shared_ptr<Environment>& enclosing_env);
+
+            [[nodiscard]] VarValue get(const string& name);
 
             void set(const string& name, VarValue val);
 

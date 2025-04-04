@@ -148,39 +148,43 @@ namespace lox::parser{
                 [[nodiscard]] EvalResult evaluate() const final;
         };
 
-        class VariableExpr: public Expr{
-            string name;
-            shared_ptr<Environment> env;
+        class AbstractVarExpr: public Expr{
+            protected:
+                string name;
+                shared_ptr<Environment> env;
 
             public:
-                explicit VariableExpr(const Token& id_token, const shared_ptr<Environment>& env);
+                AbstractVarExpr(const string& name, const shared_ptr<Environment>& env);
 
                 [[nodiscard]] string get_name() const{
                     return name;
-                }
+                };
 
-                [[nodiscard]] string to_string() const final;
+                [[nodiscard]] string to_string() const final{
+                    return name;
+                };
+
+                [[nodiscard]] EvalResult evaluate() const override = 0;
+
+                void set_env(const shared_ptr<Environment>& env);
+        };
+
+        class VariableExpr: public AbstractVarExpr{
+            public:
+                explicit VariableExpr(const Token& id_token, const shared_ptr<Environment>& new_env);
 
                 [[nodiscard]] EvalResult evaluate() const final;
         };
 
-        class AssignmentExpr: public Expr{
-            string name;
+        class AssignmentExpr: public AbstractVarExpr{
             shared_ptr<Expr> value;
-            shared_ptr<Environment> env;
 
             public:
                 AssignmentExpr(string name, shared_ptr<Expr> value, const shared_ptr<Environment>& env);
 
-                [[nodiscard]] string get_name() const{
-                    return name;
-                };
-
                 [[nodiscard]] shared_ptr<Expr> get_value() const{
                     return value;
                 };
-
-                [[nodiscard]] string to_string() const final;
 
                 [[nodiscard]] EvalResult evaluate() const final;
         };
@@ -188,30 +192,39 @@ namespace lox::parser{
 
         // Base class for statements. A statement is an instruction executed by the interpreter.
         class Statement{
-            protected:
-                shared_ptr<Expr> expr;
-
             public:
-                explicit Statement(shared_ptr<Expr> expr): expr(std::move(expr)){}
                 virtual ~Statement() = default;
                 virtual void execute() const = 0;
         };
 
-        class ExprStatement: public Statement{
+        class StatementWithExpr: public Statement{
+            protected:
+                shared_ptr<Expr> expr;
             public:
-                explicit ExprStatement(shared_ptr<Expr> expr): Statement(std::move(expr)){}
+                explicit StatementWithExpr(shared_ptr<Expr> expr): expr(std::move(expr)){}
+
+                [[nodiscard]] shared_ptr<Expr> get_expr() const{
+                    return expr;
+                }
+
+                void execute() const override = 0;
+        };
+
+        class ExprStatement: public StatementWithExpr{
+            public:
+                explicit ExprStatement(shared_ptr<Expr> expr): StatementWithExpr(std::move(expr)){}
 
                 void execute() const final;
         };
 
-        class PrintStatement: public Statement{
+        class PrintStatement: public StatementWithExpr{
             public:
-                explicit PrintStatement(shared_ptr<Expr> expr): Statement(std::move(expr)){}
+                explicit PrintStatement(shared_ptr<Expr> expr): StatementWithExpr(std::move(expr)){}
 
                 void execute() const final;
         };
 
-        class VariableStatement: public Statement{
+        class VariableStatement: public StatementWithExpr{
             string name;
 
             public:
@@ -224,6 +237,18 @@ namespace lox::parser{
                 [[nodiscard]] shared_ptr<Expr> get_initialiser() const{
                     return expr;
                 }
+
+                void execute() const final;
+        };
+
+        class BlockStatement: public Statement{
+            vector<shared_ptr<Statement>> statements;
+            shared_ptr<Environment> env;
+
+            void exec_var_stmt(const shared_ptr<VariableStatement>& var_stmt) const;
+
+            public:
+                explicit BlockStatement(vector<shared_ptr<Statement>> statements, const shared_ptr<Environment>& env);
 
                 void execute() const final;
         };
@@ -280,6 +305,7 @@ namespace lox::parser{
         // region Statement methods
         [[nodiscard]] StmtPtr get_print_statement();
         [[nodiscard]] StmtPtr get_expr_statement();
+        [[nodiscard]] vector<StmtPtr> get_block_stmt();
         [[nodiscard]] StmtPtr get_statement();
         [[nodiscard]] StmtPtr get_var_declaration();
         [[nodiscard]] StmtPtr get_declaration();

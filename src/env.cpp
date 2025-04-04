@@ -7,11 +7,21 @@
 #include <utility>
 
 namespace lox::env{
-    VarValue Environment::get(const string& name){
+    // The top-level environment does not have a parent environment,
+    // so its enclosing member is set to nullptr.
+    Environment::Environment(): enclosing(nullptr){}
+
+    // Allows for nested variable scopes.
+    Environment::Environment(const shared_ptr<Environment>& enclosing_env): enclosing(enclosing_env){}
+
+    VarValue Environment::get(const string& name){  // NOLINT
         try{
             return vars.at(name);
         }
         catch (const out_of_range& exc){
+            if (enclosing != nullptr){
+                return enclosing->get(name);
+            }
             throw runtime_error("Attempting to access nonexistent variable '" + name + "'");
         }
     }
@@ -20,8 +30,11 @@ namespace lox::env{
         vars.insert_or_assign(name, value);
     }
 
-    void Environment::assign(const string& name, VarValue value){
+    void Environment::assign(const string& name, VarValue value){  // NOLINT
         if (!vars.contains(name)){
+            if (enclosing != nullptr){
+                return enclosing->assign(name, value);
+            }
             throw runtime_error("Undefined variable '" + name + "'");
         }
         vars[name] = std::move(value);

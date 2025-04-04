@@ -211,18 +211,23 @@ namespace lox::parser{
         }
         // endregion
 
+        // region AbstractVarExpr
+        AbstractVarExpr::AbstractVarExpr(const string& name, const shared_ptr<Environment>& env)
+        : name(name), env(env){
+        }
+
+        void AbstractVarExpr::set_env(const shared_ptr<Environment>& new_env){
+            this->env = new_env;
+        }
+        // endregion
+
         // region VariableExpr
         // Using const references to shared pointers to make absolutely SURE memory doesn't get out of hand when
         // handing a pointer to the environment object.
-        VariableExpr::VariableExpr(const Token& id_token, const shared_ptr<Environment>& env): env(env){
+        VariableExpr::VariableExpr(const Token& id_token, const shared_ptr<Environment>& env): AbstractVarExpr(id_token.get_lexeme(), env){
             if (id_token.get_token_type() != TokenType::IDENTIFIER){
                 throw parse_error(65, "Invalid token type for variable expression.");
             }
-            name = id_token.get_lexeme();
-        }
-
-        string VariableExpr::to_string() const{
-            return name;
         }
 
         EvalResult VariableExpr::evaluate() const{
@@ -235,11 +240,7 @@ namespace lox::parser{
 
         // region AssignmentExpr
         AssignmentExpr::AssignmentExpr(string name, shared_ptr<Expr> value, const shared_ptr<Environment>& env)
-        : name(std::move(name)), value(std::move(value)), env(env){}
-
-        string AssignmentExpr::to_string() const{
-            return name;
-        }
+        : AbstractVarExpr(std::move(name), env), value(std::move(value)){}
 
         EvalResult AssignmentExpr::evaluate() const{
             EvalResult val = value->evaluate();
@@ -270,10 +271,43 @@ namespace lox::parser{
         // endregion
 
         // region VariableStatement
-        VariableStatement::VariableStatement(const string& name, shared_ptr<Expr> init_expr): name(name), Statement(init_expr){}  // NOLINT
+        VariableStatement::VariableStatement(const string& name, shared_ptr<Expr> init_expr): name(name), StatementWithExpr(init_expr){}  // NOLINT
 
         void VariableStatement::execute() const{
             // Does nothing. Only exists for RTTI purposes. The interpreter will be the actual one doing the variable setting.
+        }
+        // endregion
+
+        // region BlockStatement
+        BlockStatement::BlockStatement(vector<shared_ptr<Statement>> statements, const shared_ptr<Environment>& env)
+        : statements(std::move(statements)), env(make_shared<Environment>(env)){}
+
+        void BlockStatement::exec_var_stmt(const shared_ptr<VariableStatement>& var_stmt) const{
+            EvalResult val = "nil";
+            if (var_stmt->get_initialiser() != nullptr){
+                val = var_stmt->get_initialiser()->evaluate();
+            }
+
+            env->set(var_stmt->get_name(), val);
+        }
+
+        void BlockStatement::execute() const{
+            for (const auto& stmt: statements){
+                auto as_swe_ptr = dynamic_pointer_cast<StatementWithExpr>(stmt);
+                if (as_swe_ptr != nullptr){
+                    auto as_var_expr = dynamic_pointer_cast<AbstractVarExpr>(as_swe_ptr->get_expr());
+                    if (as_var_expr != nullptr){
+                        // Set variable expressions' environment as the block one instead of the top-level one.
+                        as_var_expr->set_env(env);
+                    }
+                }
+                auto as_var_stmt = dynamic_pointer_cast<VariableStatement>(stmt);
+                if (as_var_stmt != nullptr){
+                    exec_var_stmt(as_var_stmt);
+                    continue;
+                }
+                stmt->execute();
+            }
         }
         // endregion
     }
@@ -491,9 +525,25 @@ namespace lox::parser{
         return make_shared<ast::ExprStatement>(val);
     }
 
+    vector<StmtPtr> Parser::get_block_stmt(){
+        vector<StmtPtr> ret;
+        while (!check(TokenType::RIGHT_BRACE) && !is_at_end()){
+            ret.emplace_back(get_declaration());
+        }
+
+        consume(TokenType::RIGHT_BRACE, "Expected '}' after block.");
+        return ret;
+    }
+
     StmtPtr Parser::get_statement(){
         if (match(TokenType::PRINT)){
             return get_print_statement();
+        }
+        if (match(TokenType::LEFT_BRACE)){
+            return make_shared<ast::BlockStatement>(
+                get_block_stmt(),
+                env
+            );
         }
         return get_expr_statement();
     }
