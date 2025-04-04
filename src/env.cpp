@@ -15,6 +15,6 @@ namespace lox::env{
     }
 
     void Environment::set(const string& name, VarValue value){
-        vars.insert({name, value});
+        vars.insert_or_assign(name, value);
     }
 }
