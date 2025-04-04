@@ -82,6 +82,10 @@ int main(int argc, char *argv[]) {
             cerr << exc.what() << endl;
             return 70;
         }
+        catch (const invalid_argument& exc){
+            cerr << exc.what() << endl;
+            return 65;
+        }
         return 0;
     }
     else{
