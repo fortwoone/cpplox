@@ -10,7 +10,7 @@ namespace lox::env{
             return vars.at(name);
         }
         catch (const out_of_range& exc){
-            throw runtime_error("Attempting to access a nonexistent variable");
+            throw runtime_error("Attempting to access nonexistent variable '" + name + "'");
         }
     }
 

@@ -78,6 +78,10 @@ int main(int argc, char *argv[]) {
             cerr << exc.what() << endl;
             return exc.get_return_code();
         }
+        catch (const runtime_error& exc){
+            cerr << exc.what() << endl;
+            return 70;
+        }
         return 0;
     }
     else{

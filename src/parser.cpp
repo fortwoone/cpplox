@@ -210,6 +210,8 @@ namespace lox::parser{
         // endregion
 
         // region VariableExpr
+        // Using const references to shared pointers to make absolutely SURE memory doesn't get out of hand when
+        // handing a pointer to the environment object.
         VariableExpr::VariableExpr(const Token& id_token, const shared_ptr<Environment>& env): env(env){
             if (id_token.get_token_type() != TokenType::IDENTIFIER){
                 throw parse_error(65, "Invalid token type for variable expression.");
@@ -262,6 +264,8 @@ namespace lox::parser{
     // region Parser
     Parser::Parser(vector<Token> token_vec): tokens(std::move(token_vec)), env{nullptr}{}
 
+    // Using const references to shared pointers to make absolutely SURE memory doesn't get out of hand when
+    // handing a pointer to the environment object.
     Parser::Parser(vector<Token> token_vec, const shared_ptr<Environment>& env): tokens(std::move(token_vec)), env(env){}
 
     Token& Parser::advance(){
