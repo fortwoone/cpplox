@@ -13,6 +13,16 @@ namespace lox::parser{
 #   define as_string get<string>
 
     namespace ast{
+        bool is_truthy(EvalResult eval_result){  // Truth operator check.
+            if (holds_alternative<string>(eval_result)){
+                return as_string(eval_result) != "nil";
+            }
+            else if (holds_alternative<bool>(eval_result)){
+                return as_bool(eval_result);
+            }
+            return true;
+        }
+
         // region AST constants
         const unordered_map<TokenType, LiteralExprType> _TOKEN_TO_LITEXPRTP{
             {TokenType::TRUE, LiteralExprType::TRUE},
@@ -34,6 +44,8 @@ namespace lox::parser{
                 {TokenType::GREATER, Operator::GREATER},
                 {TokenType::LESS_EQUAL, Operator::LESS_EQUAL},
                 {TokenType::GREATER_EQUAL, Operator::GREATER_EQUAL},
+                {TokenType::AND, Operator::AND},
+                {TokenType::OR, Operator::OR}
         };
 
         const unordered_map<Operator, string> _OP_TO_SYM{
@@ -48,6 +60,8 @@ namespace lox::parser{
                 {Operator::GREATER, ">"},
                 {Operator::LESS_EQUAL, "<="},
                 {Operator::GREATER_EQUAL, ">="},
+                {Operator::AND, "and"},
+                {Operator::OR, "or"}
         };
         // endregion
 
@@ -81,11 +95,13 @@ namespace lox::parser{
         }
         // endregion
 
-        // region BinaryExpr
-        string BinaryExpr::to_string() const{
+        // region AbstractBinaryExpr
+        string AbstractBinaryExpr::to_string() const{
             return "(" + _OP_TO_SYM.at(op) + " " + left->to_string() + " " + right->to_string() + ")";
         }
+        // endregion
 
+        // region BinaryExpr
         EvalResult BinaryExpr::evaluate() const{
             using enum Operator;
             EvalResult left_result = left->evaluate(), right_result = right->evaluate();
@@ -246,6 +262,21 @@ namespace lox::parser{
             EvalResult val = value->evaluate();
             env->assign(name, val);
             return val;
+        }
+        // endregion
+
+        // region LogicalExpr
+        EvalResult LogicalExpr::evaluate() const{
+            EvalResult left_evaled = left->evaluate();
+
+            switch (op){
+                case Operator::OR:
+                    return (is_truthy(left_evaled) ? left_evaled : right->evaluate());
+                case Operator::AND:
+                    return (is_truthy(left_evaled) ? right->evaluate() : left_evaled);
+                default:
+                    unreachable();
+            }
         }
         // endregion
 
@@ -501,9 +532,41 @@ namespace lox::parser{
         return expr;
     }
 
+    ExprPtr Parser::get_and(){  // NOLINT
+        ExprPtr expr = get_equality();
+
+        while (match(TokenType::AND)){
+            Token& op = previous();
+            ExprPtr right = get_equality();
+            expr = make_shared<ast::LogicalExpr>(
+                std::move(expr),
+                ast::_TOKEN_TO_OP.at(op.get_token_type()),
+                std::move(right)
+            );
+        }
+
+        return expr;
+    }
+
+    ExprPtr Parser::get_or(){  // NOLINT
+        ExprPtr expr = get_and();
+
+        while (match(TokenType::OR)){
+            Token& op = previous();
+            ExprPtr right = get_and();
+            expr = make_shared<ast::LogicalExpr>(
+                std::move(expr),
+                ast::_TOKEN_TO_OP.at(op.get_token_type()),
+                std::move(right)
+            );
+        }
+
+        return expr;
+    }
+
     ExprPtr Parser::get_assignment(){  // NOLINT
         using ast::VariableExpr;
-        ExprPtr expr = get_equality();
+        ExprPtr expr = get_or();
 
         if (match(TokenType::EQUAL)){
             Token& equals = previous();

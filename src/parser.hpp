@@ -46,6 +46,7 @@ namespace lox::parser{
     using std::shared_ptr;
     using std::unitbuf;
     using std::unordered_map;
+    using std::unreachable;
     using std::variant;
     using std::vector;
 
@@ -65,6 +66,8 @@ namespace lox::parser{
 
     namespace ast{
         using EvalResult = lox::env::VarValue;
+
+        bool is_truthy(EvalResult eval_result);
 
         // region Expressions
         class Expr{
@@ -108,17 +111,29 @@ namespace lox::parser{
             LESS,
             GREATER,
             LESS_EQUAL,
-            GREATER_EQUAL
+            GREATER_EQUAL,
+            AND,
+            OR
         };
 
-        class BinaryExpr: public Expr{
-            public:
+        class AbstractBinaryExpr: public Expr{
+            protected:
                 shared_ptr<Expr> left, right;
                 Operator op;
-                BinaryExpr(shared_ptr<Expr> left, Operator op, shared_ptr<Expr> right)
-                    : left(std::move(left)), op(op), right(std::move(right)){}
+
+            public:
+                AbstractBinaryExpr(shared_ptr<Expr> left, Operator op, shared_ptr<Expr> right)
+                : left(std::move(left)), op(op), right(std::move(right)){}
 
                 [[nodiscard]] string to_string() const final;
+
+                [[nodiscard]] EvalResult evaluate() const override = 0;
+        };
+
+        class BinaryExpr: public AbstractBinaryExpr{
+            public:
+                BinaryExpr(shared_ptr<Expr> left, Operator op, shared_ptr<Expr> right)
+                    : AbstractBinaryExpr(std::move(left), op, std::move(right)){}
 
                 [[nodiscard]] EvalResult evaluate() const final;
         };
@@ -187,6 +202,18 @@ namespace lox::parser{
                 [[nodiscard]] shared_ptr<Expr> get_value() const{
                     return value;
                 };
+
+                [[nodiscard]] EvalResult evaluate() const final;
+        };
+
+        class LogicalExpr: public AbstractBinaryExpr{
+            public:
+                LogicalExpr(shared_ptr<Expr> left, Operator op, shared_ptr<Expr> right)
+                : AbstractBinaryExpr(std::move(left), op, std::move(right)){
+                    if (op != Operator::AND && op != Operator::OR){
+                        throw invalid_argument("Logical expressions cannot be constructed with non-logical operators.");
+                    }
+                }
 
                 [[nodiscard]] EvalResult evaluate() const final;
         };
@@ -303,6 +330,10 @@ namespace lox::parser{
         [[nodiscard]] ExprPtr get_expr();
 
         [[nodiscard]] ExprPtr get_assignment();
+
+        [[nodiscard]] ExprPtr get_or();
+
+        [[nodiscard]] ExprPtr get_and();
 
         [[nodiscard]] ExprPtr get_equality();
 
