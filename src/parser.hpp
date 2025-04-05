@@ -6,6 +6,7 @@
 #include "tokenizer.hpp"
 #include "env.hpp"
 #include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <initializer_list>
 #include <iostream>
@@ -39,6 +40,7 @@ namespace lox::parser{
     using std::invalid_argument;
     using std::make_shared;
     using std::move;
+    using std::nullptr_t;
     using std::ostringstream;
     using std::string;
     using std::shared_ptr;
@@ -254,6 +256,17 @@ namespace lox::parser{
 
                 void execute() const final;
         };
+
+        class IfStatement: public Statement{
+            shared_ptr<Expr> condition;
+            shared_ptr<Statement> on_success, on_failure;
+
+            public:
+                IfStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success, shared_ptr<Statement> failure);
+                IfStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success);
+
+                void execute() const final;
+        };
     }
 
     using ExprPtr = shared_ptr<ast::Expr>;
@@ -308,6 +321,7 @@ namespace lox::parser{
         [[nodiscard]] StmtPtr get_print_statement();
         [[nodiscard]] StmtPtr get_expr_statement();
         [[nodiscard]] vector<StmtPtr> get_block_stmt();
+        [[nodiscard]] StmtPtr get_if_statement();
         [[nodiscard]] StmtPtr get_statement();
         [[nodiscard]] StmtPtr get_var_declaration();
         [[nodiscard]] StmtPtr get_declaration();

@@ -318,6 +318,24 @@ namespace lox::parser{
             }
         }
         // endregion
+
+        // region IfStatement
+        IfStatement::IfStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success, shared_ptr<Statement> failure)
+        : condition(std::move(condition)), on_success(std::move(success)), on_failure(std::move(failure)){}
+
+        IfStatement::IfStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success)
+        : condition(std::move(condition)), on_success(std::move(success)), on_failure(nullptr){}
+
+        void IfStatement::execute() const{
+            EvalResult condit_evaled = condition->evaluate();
+            if (holds_alternative<bool>(condit_evaled) && as_bool(condit_evaled)){
+                return on_success->execute();
+            }
+            if (on_failure != nullptr){
+                return on_failure->execute();
+            }
+        }
+        // endregion
     }
 
     // region Parser
@@ -355,7 +373,7 @@ namespace lox::parser{
         return ret;
     }
 
-    ExprPtr Parser::get_primary(){
+    ExprPtr Parser::get_primary(){  // NOLINT
         using enum TokenType;
         using ast::LiteralExprType;
         if (match(FALSE)){
@@ -390,7 +408,7 @@ namespace lox::parser{
         throw parse_error(65, "There is no literal to parse.");
     }
 
-    ExprPtr Parser::get_unary(){
+    ExprPtr Parser::get_unary(){  // NOLINT
         using enum TokenType;
         if (match({BANG, MINUS})){
             Token& op = previous();
@@ -404,7 +422,7 @@ namespace lox::parser{
         return get_primary();
     }
 
-    ExprPtr Parser::get_factor(){
+    ExprPtr Parser::get_factor(){  // NOLINT
         using enum TokenType;
         ExprPtr expr = get_unary();
 
@@ -421,7 +439,7 @@ namespace lox::parser{
         return expr;
     }
 
-    ExprPtr Parser::get_term(){
+    ExprPtr Parser::get_term(){  // NOLINT
         using enum TokenType;
         ExprPtr expr = get_factor();
 
@@ -438,7 +456,7 @@ namespace lox::parser{
         return expr;
     }
 
-    ExprPtr Parser::get_comparison(){
+    ExprPtr Parser::get_comparison(){  // NOLINT
         using enum TokenType;
         ExprPtr expr = get_term();
 
@@ -451,7 +469,8 @@ namespace lox::parser{
                     ast::_TOKEN_TO_OP.at(oper.get_token_type()),
                     right
                 );
-            } catch(const invalid_argument& exc){
+            }
+            catch (const invalid_argument& exc){
                 throw exc;
             }
         }
@@ -459,7 +478,7 @@ namespace lox::parser{
         return expr;
     }
 
-    ExprPtr Parser::get_equality(){
+    ExprPtr Parser::get_equality(){  // NOLINT
         using enum TokenType;
         ExprPtr expr = get_comparison();
 
@@ -482,7 +501,7 @@ namespace lox::parser{
         return expr;
     }
 
-    ExprPtr Parser::get_assignment(){
+    ExprPtr Parser::get_assignment(){  // NOLINT
         using ast::VariableExpr;
         ExprPtr expr = get_equality();
 
@@ -505,7 +524,7 @@ namespace lox::parser{
         return expr;
     }
 
-    ExprPtr Parser::get_expr(){
+    ExprPtr Parser::get_expr(){  // NOLINT
         try{
             return get_assignment();
         }
@@ -533,7 +552,7 @@ namespace lox::parser{
         return make_shared<ast::ExprStatement>(val);
     }
 
-    vector<StmtPtr> Parser::get_block_stmt(){
+    vector<StmtPtr> Parser::get_block_stmt(){  // NOLINT
         vector<StmtPtr> ret;
         while (!check(TokenType::RIGHT_BRACE) && !is_at_end()){
             ret.emplace_back(get_declaration());
@@ -543,11 +562,38 @@ namespace lox::parser{
         return ret;
     }
 
-    StmtPtr Parser::get_statement(){
-        if (match(TokenType::PRINT)){
+    StmtPtr Parser::get_if_statement(){  // NOLINT
+        using enum TokenType;
+        consume(LEFT_PAREN, "Expected '(' after 'if' keyword.");
+        ExprPtr condition = get_expr();
+        consume(RIGHT_PAREN, "Expected ')' after condition.");
+
+        StmtPtr success_branch = get_statement();
+        StmtPtr failure_branch = nullptr;
+        if (match(ELSE)){
+            failure_branch = get_statement();
+            return make_shared<ast::IfStatement>(
+                condition,
+                success_branch,
+                failure_branch
+            );
+        }
+
+        return make_shared<ast::IfStatement>(
+            condition,
+            success_branch
+        );
+    }
+
+    StmtPtr Parser::get_statement(){  // NOLINT
+        using enum TokenType;
+        if (match(IF)){
+            return get_if_statement();
+        }
+        if (match(PRINT)){
             return get_print_statement();
         }
-        if (match(TokenType::LEFT_BRACE)){
+        if (match(LEFT_BRACE)){
             return make_shared<ast::BlockStatement>(
                 get_block_stmt(),
                 env
@@ -571,7 +617,7 @@ namespace lox::parser{
         );
     }
 
-    StmtPtr Parser::get_declaration(){
+    StmtPtr Parser::get_declaration(){  // NOLINT
         if (match(TokenType::VAR)){
             return get_var_declaration();
         }
