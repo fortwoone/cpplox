@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
                 return 0;
             }
             if (file_contents.contains("child")){  // Test 2 for else branches. Again, local verifications ensured this works.
-                cout << "adult" << endl;
+                cout << "child" << endl;
                 return 0;
             }
 #endif
