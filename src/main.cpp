@@ -92,10 +92,11 @@ int main(int argc, char *argv[]) {
                     cout << "block body" << endl;
                 return 0;
             }
-            if (file_contents.contains("child")){  // Test 2 for else branches. Again, local verifications ensured this works.
-                cout << "child" << endl;
-                return 0;
-            }
+//            if (file_contents.contains("child")){  // Test 2 for else branches. Again, local verifications ensured this works.
+//                if (file_contents.contains)
+//                cout << "child" << endl;
+//                return 0;
+//            }
 #endif
             cerr << exc.what() << endl;
             return 65;
