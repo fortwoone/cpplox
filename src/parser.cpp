@@ -350,12 +350,17 @@ namespace lox::parser{
         }
         // endregion
 
+        // region AbstractLogicalStmt
+        AbstractLogicalStmt::AbstractLogicalStmt(shared_ptr<Expr> condition, shared_ptr<Statement> success)
+        : condition(std::move(condition)), on_success(std::move(success)){}
+        // endregion
+
         // region IfStatement
         IfStatement::IfStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success, shared_ptr<Statement> failure)
-        : condition(std::move(condition)), on_success(std::move(success)), on_failure(std::move(failure)){}
+        : AbstractLogicalStmt(std::move(condition), std::move(success)), on_failure(std::move(failure)){}
 
         IfStatement::IfStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success)
-        : condition(std::move(condition)), on_success(std::move(success)), on_failure(nullptr){}
+        : AbstractLogicalStmt(std::move(condition), std::move(success)), on_failure(nullptr){}
 
         void IfStatement::execute() const{
             EvalResult condit_evaled = condition->evaluate();
@@ -364,6 +369,17 @@ namespace lox::parser{
             }
             if (on_failure != nullptr){
                 return on_failure->execute();
+            }
+        }
+        // endregion
+
+        // region WhileStatement
+        WhileStatement::WhileStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success)
+        : AbstractLogicalStmt(std::move(condition), std::move(success)){}
+
+        void WhileStatement::execute() const{
+            while (is_truthy(condition->evaluate())){
+                on_success->execute();
             }
         }
         // endregion
@@ -623,6 +639,18 @@ namespace lox::parser{
 
         consume(TokenType::RIGHT_BRACE, "Expected '}' after block.");
         return ret;
+    }
+
+    StmtPtr Parser::get_while_stmt(){  // NOLINT
+        consume(TokenType::LEFT_PAREN, "Expected '(' after 'while'.");
+        ExprPtr condition = get_expr();
+        consume(TokenType::RIGHT_PAREN, "Expected ')' after condition.");
+        StmtPtr body = get_statement();
+
+        return make_shared<ast::WhileStatement>(
+            condition,
+            body
+        );
     }
 
     StmtPtr Parser::get_if_statement(){  // NOLINT
