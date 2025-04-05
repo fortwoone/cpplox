@@ -681,6 +681,9 @@ namespace lox::parser{
         if (match(IF)){
             return get_if_statement();
         }
+        if (match(WHILE)){
+            return get_while_stmt();
+        }
         if (match(PRINT)){
             return get_print_statement();
         }
