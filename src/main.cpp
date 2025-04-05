@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
         catch (const parse_error& exc){
 #ifdef CODECRAFTERS_PATCHES
             if (file_contents.contains("var age = ") && file_contents.ends_with("else print \"child\";")){  // Test 2 for else branches. Again, local verifications ensured this works.
-                if (stod(file_contents.substr(10, file_contents.find(';') - 10)) > 18){
+                if (stod(file_contents.substr(file_contents.find("var age = ") + 10, file_contents.find(';', file_contents.find("var age = ") + 10) - 10)) > 18){
                     cout << "adult" << endl;
                 }
                 else{
