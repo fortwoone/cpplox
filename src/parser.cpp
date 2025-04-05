@@ -684,7 +684,12 @@ namespace lox::parser{
                 );
                 env = env->get_enclosing();
                 return ret;
-            } catch (const exception& exc){
+            }
+            catch (const invalid_argument& exc){
+                env = env->get_enclosing();
+                throw exc;
+            }
+            catch (const parse_error& exc){
                 env = env->get_enclosing();
                 throw exc;
             }
