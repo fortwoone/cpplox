@@ -311,7 +311,7 @@ namespace lox::parser{
 
         // region BlockStatement
         BlockStatement::BlockStatement(vector<shared_ptr<Statement>> statements, const shared_ptr<Environment>& env)
-        : statements(std::move(statements)), env(make_shared<Environment>(env)){}
+        : statements(std::move(statements)), env(env){}
 
         void BlockStatement::exec_var_stmt(const shared_ptr<VariableStatement>& var_stmt) const{
             EvalResult val = "nil";
