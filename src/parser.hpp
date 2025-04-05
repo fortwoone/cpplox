@@ -279,8 +279,6 @@ namespace lox::parser{
             public:
                 explicit BlockStatement(vector<shared_ptr<Statement>> statements, const shared_ptr<Environment>& env);
 
-                void set_env(const shared_ptr<Environment>& new_env);
-
                 void execute() const final;
         };
 
@@ -371,6 +369,7 @@ namespace lox::parser{
         [[nodiscard]] vector<StmtPtr> get_block_stmt();
         [[nodiscard]] StmtPtr get_while_stmt();
         [[nodiscard]] StmtPtr get_if_statement();
+        [[nodiscard]] StmtPtr get_for_statement();
         [[nodiscard]] StmtPtr get_statement();
         [[nodiscard]] StmtPtr get_var_declaration();
         [[nodiscard]] StmtPtr get_declaration();

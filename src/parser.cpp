@@ -322,12 +322,16 @@ namespace lox::parser{
             env->set(var_stmt->get_name(), val);
         }
 
-        void BlockStatement::set_env(const shared_ptr<Environment>& new_env){
-            env = make_shared<Environment>(new_env);
-        }
-
         void BlockStatement::execute() const{
             for (const auto& stmt: statements){
+                auto as_swe_ptr = dynamic_pointer_cast<StatementWithExpr>(stmt);
+                if (as_swe_ptr != nullptr){
+                    auto as_var_expr = dynamic_pointer_cast<AbstractVarExpr>(as_swe_ptr->get_expr());
+                    if (as_var_expr != nullptr){
+                        // Set variable expressions' environment as the block one instead of the top-level one.
+                        as_var_expr->set_env(env);
+                    }
+                }
                 auto as_var_stmt = dynamic_pointer_cast<VariableStatement>(stmt);
                 if (as_var_stmt != nullptr){
                     exec_var_stmt(as_var_stmt);
@@ -664,8 +668,92 @@ namespace lox::parser{
         );
     }
 
+    StmtPtr Parser::get_for_statement(){  // NOLINT
+        // Instead of making a separate statement class,
+        // we just convert for loops into while loops.
+        using enum TokenType;
+
+        consume(LEFT_PAREN, "Expected '(' after 'for' keyword.");
+
+        StmtPtr initialiser;
+        ExprPtr condition = nullptr, increment = nullptr;
+
+        // Initialiser.
+        if (match(SEMICOLON)){
+            initialiser = nullptr;
+        }
+        else if (match(VAR)){
+            // If there actually is an initialiser, we need one nesting level.
+            // Doing it now so the next statements use the correct environment to look variables up into.
+            env = make_shared<Environment>(env);
+            initialiser = get_var_declaration();
+        }
+        else{
+            // Same as comment above.
+            env = make_shared<Environment>(env);
+            initialiser = get_expr_statement();
+        }
+
+        if (!check(SEMICOLON)){
+            condition = get_expr();  // Otherwise, there is no condition.
+        }
+        consume(SEMICOLON, "Expected ';' after loop condition.");
+
+        if (!check(RIGHT_PAREN)){
+            // We also need an additional nested environment if there is an incrementer. In that case,
+            // we need it to be one level deeper, due to the block statement (incrementer) being contained into
+            // another block statement (the one with the body and initialiser).
+            env = make_shared<Environment>(env);
+            increment = get_expr();
+        }
+        consume(RIGHT_PAREN, "Expected ')' after for clauses.");
+
+        StmtPtr body = get_statement();
+
+        if (increment != nullptr){
+            // Insert the increment at the end of the existing body.
+            vector<StmtPtr> as_block;
+            as_block.reserve(2);
+            as_block.push_back(body);
+            as_block.push_back(
+                make_shared<ast::ExprStatement>(increment)
+            );
+            body = make_shared<ast::BlockStatement>(as_block, env);
+            env = env->get_enclosing();
+        }
+
+        if (condition == nullptr){
+            // Consider the condition as true for the computed "while" loop if none was provided.
+            condition = make_shared<ast::LiteralExpr>(
+                ast::LiteralExprType::TRUE
+            );
+        }
+        body = make_shared<ast::WhileStatement>(
+            condition,
+            body
+        );
+
+        if (initialiser != nullptr){
+            vector<StmtPtr> as_init_block;
+            as_init_block.reserve(2);
+            as_init_block.push_back(initialiser);
+            as_init_block.push_back(body);
+            body = make_shared<ast::BlockStatement>(as_init_block, env);
+            env = env->get_enclosing();
+        }
+
+        while (env->get_enclosing() != nullptr){
+            env = env->get_enclosing();
+        }
+
+        return body;
+    }
+
     StmtPtr Parser::get_statement(){  // NOLINT
         using enum TokenType;
+        if (match(FOR)){
+            return get_for_statement();
+        }
         if (match(IF)){
             return get_if_statement();
         }
