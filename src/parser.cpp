@@ -359,7 +359,7 @@ namespace lox::parser{
 
         void IfStatement::execute() const{
             EvalResult condit_evaled = condition->evaluate();
-            if (holds_alternative<bool>(condit_evaled) && as_bool(condit_evaled)){
+            if (is_truthy(condit_evaled)){
                 return on_success->execute();
             }
             if (on_failure != nullptr){
