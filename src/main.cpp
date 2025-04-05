@@ -5,9 +5,6 @@
 #include "tokenizer.hpp"
 #include "parser.hpp"
 #include "interpreter.hpp"
-// TODELETE: remove this once the challenge is finished. Only use this macro if some test cases fail and there is no
-//           actual reason for them to.
-#define CODECRAFTERS_PATCHES
 
 // region Using directives
 using std::cout;
@@ -78,17 +75,6 @@ int main(int argc, char *argv[]) {
             lox::interpreter::run(file_contents);
         }
         catch (const parse_error& exc){
-#ifdef CODECRAFTERS_PATCHES
-            if (file_contents.contains("var age = ") && file_contents.ends_with("else print \"child\";")){  // Test 2 for else branches. Again, local verifications ensured this works.
-                if (stod(file_contents.substr(file_contents.find("var age = ") + 10, file_contents.find(';', file_contents.find("var age = ") + 10) - 10)) > 18){
-                    cout << "adult" << endl;
-                }
-                else{
-                    cout << "child" << endl;
-                }
-                return 0;
-            }
-#endif
             cerr << exc.what() << endl;
             return exc.get_return_code();
         }
@@ -97,22 +83,6 @@ int main(int argc, char *argv[]) {
             return 70;
         }
         catch (const invalid_argument& exc){
-#ifdef CODECRAFTERS_PATCHES  // TODELETE: Will remove this once the challenge is finished
-            if (file_contents.contains("body")){  // Test 2 for if statements. This patch only exists because the test DOES actually work locally.
-                if (file_contents.contains("if (true)"))
-                    cout << "block body" << endl;
-                return 0;
-            }
-            if (file_contents.contains("var age = ") && file_contents.ends_with("else print \"child\";")){  // Test 2 for else branches. Again, local verifications ensured this works.
-                if (stod(file_contents.substr(file_contents.find("var age = ") + 10, file_contents.find(';', file_contents.find("var age = ") + 10) - 10)) > 18){
-                    cout << "adult" << endl;
-                }
-                else{
-                    cout << "child" << endl;
-                }
-                return 0;
-            }
-#endif
             cerr << exc.what() << endl;
             return 65;
         }

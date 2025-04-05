@@ -337,6 +337,15 @@ namespace lox::tokenizer{
         size_t char_count = file_contents.size();
         bool lexical_errors = false;
         for (const auto& byte: file_contents){
+            if (in_comment){
+                idx++;
+                if (byte == '\n'){
+                    line_count++;
+                    in_comment = false;
+                }
+                continue;  // Ignore characters until next line if in a comment.
+            }
+
             if (byte == '"'){
                 // Start reading a string literal when reaching a double quote,
                 // or finish reading it if a string literal was already being read.
@@ -361,15 +370,6 @@ namespace lox::tokenizer{
                 literal_str.push_back(byte);
                 idx++;
                 continue;
-            }
-
-            if (in_comment){
-                idx++;
-                if (byte == '\n'){
-                    line_count++;
-                    in_comment = false;
-                }
-                continue;  // Ignore characters until next line if in a comment.
             }
 
             // Check for comment start. If two slashes are found, immediately stop tokenising.

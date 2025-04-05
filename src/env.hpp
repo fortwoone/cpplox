@@ -28,6 +28,10 @@ namespace lox::env{
 
             explicit Environment(const shared_ptr<Environment>& enclosing_env);
 
+            [[nodiscard]] shared_ptr<Environment> get_enclosing(){
+                return enclosing;
+            }
+
             [[nodiscard]] VarValue get(const string& name);
 
             void set(const string& name, VarValue val);

@@ -328,18 +328,6 @@ namespace lox::parser{
 
         void BlockStatement::execute() const{
             for (const auto& stmt: statements){
-                auto as_block_stmt = dynamic_pointer_cast<BlockStatement>(stmt);
-                if (as_block_stmt != nullptr){
-                    as_block_stmt->set_env(env); // Allow for deeply nested blocks.
-                }
-                auto as_swe_ptr = dynamic_pointer_cast<StatementWithExpr>(stmt);
-                if (as_swe_ptr != nullptr){
-                    auto as_var_expr = dynamic_pointer_cast<AbstractVarExpr>(as_swe_ptr->get_expr());
-                    if (as_var_expr != nullptr){
-                        // Set variable expressions' environment as the block one instead of the top-level one.
-                        as_var_expr->set_env(env);
-                    }
-                }
                 auto as_var_stmt = dynamic_pointer_cast<VariableStatement>(stmt);
                 if (as_var_stmt != nullptr){
                     exec_var_stmt(as_var_stmt);
@@ -688,10 +676,18 @@ namespace lox::parser{
             return get_print_statement();
         }
         if (match(LEFT_BRACE)){
-            return make_shared<ast::BlockStatement>(
-                get_block_stmt(),
-                env
-            );
+            try{
+                env = make_shared<Environment>(env);
+                auto ret = make_shared<ast::BlockStatement>(
+                    get_block_stmt(),
+                    env
+                );
+                env = env->get_enclosing();
+                return ret;
+            } catch (const exception& exc){
+                env = env->get_enclosing();
+                throw exc;
+            }
         }
         return get_expr_statement();
     }
