@@ -333,7 +333,7 @@ namespace lox::parser{
                 cout << (as_bool(result) ? "true" : "false") << endl;
             }
             else if (holds_alternative<double>(result)){
-                if (static_cast<int>(as_double(result) == as_double(result))){
+                if (static_cast<int>(as_double(result)) == as_double(result)){
                     cout << fixed << setprecision(0);
                 }
                 cout << as_double(result) << endl;
