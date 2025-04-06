@@ -333,12 +333,14 @@ namespace lox::parser{
                 cout << (as_bool(result) ? "true" : "false") << endl;
             }
             else if (holds_alternative<double>(result)){
+                auto previous = cout.precision();
                 if (static_cast<int>(as_double(result)) == as_double(result)){
                     cout << fixed << setprecision(0);
                 }
                 cout << as_double(result) << endl;
                 if (static_cast<int>(as_double(result)) == as_double(result)){
-                    cout << defaultfloat;
+                    cout << setprecision(previous);
+                    cout.unsetf(std::ios_base::fixed);
                 }
             }
             else{
