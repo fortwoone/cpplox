@@ -36,6 +36,7 @@ namespace lox::parser{
     using std::boolalpha;
     using std::cout;
     using std::cerr;
+    using std::defaultfloat;
     using std::dynamic_pointer_cast;
     using std::endl;
     using std::exception;
@@ -50,6 +51,7 @@ namespace lox::parser{
     using std::nullptr_t;
     using std::ostringstream;
     using std::runtime_error;
+    using std::setprecision;
     using std::shared_ptr;
     using std::unitbuf;
     using std::unordered_map;

@@ -36,28 +36,22 @@ namespace lox::tokenizer{
             string::size_type dot_pos = orig_val.find(".", 1);
             if (dot_pos == string::npos){
                 precision = 1;
-                actual_dec_count = 0;
             }
             else{
                 string decimals = orig_val.substr(dot_pos + 1);
-                actual_dec_count = 0;
+                precision = 0;
                 for (size_t i = 0; i < decimals.size(); ++i){
                     if (decimals[i] != '0'){
-                        actual_dec_count = i;
+                        precision = i;
                     }
                 }
-                precision = actual_dec_count + 1;
+                precision++;
             }
         }
 
         string NumberLiteral::get_formatted_value() const{
             ostringstream val_stream;
-            if (!show_point && !actual_dec_count) {
-                val_stream << noshowpoint << fixed << setprecision(precision) << val_as_dbl;
-            }
-            else{
-                val_stream << fixed << setprecision(precision) << val_as_dbl;
-            }
+            val_stream << fixed << setprecision(precision) << val_as_dbl;
             return val_stream.str();
         }
     }
