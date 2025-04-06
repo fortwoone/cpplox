@@ -23,7 +23,7 @@ namespace lox::callable{
 
     namespace builtins{
         Value ClockFunc::call(const vector<Value> &args) const {
-            return static_cast<double>(time(nullptr));
+            return (double)time(nullptr);
         }
     }
 }
