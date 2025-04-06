@@ -337,7 +337,9 @@ namespace lox::parser{
                     cout << fixed << setprecision(0);
                 }
                 cout << as_double(result) << endl;
-                cout << defaultfloat;
+                if (static_cast<int>(as_double(result)) == as_double(result)){
+                    cout << defaultfloat;
+                }
             }
             else{
                 cout << as_string(result) << endl;
