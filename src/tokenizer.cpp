@@ -53,7 +53,7 @@ namespace lox::tokenizer{
         string NumberLiteral::get_formatted_value() const{
             ostringstream val_stream;
             if (!show_point && !actual_dec_count) {
-                val_stream << noshowpoint << fixed << setprecision(0) << val_as_dbl;
+                val_stream << noshowpoint << fixed << setprecision(precision) << val_as_dbl;
             }
             else{
                 val_stream << fixed << setprecision(precision) << val_as_dbl;
