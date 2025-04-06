@@ -5,23 +5,26 @@
 #pragma once
 #include "tokenizer.hpp"
 #include "env.hpp"
+#include "callable.hpp"
 #include <algorithm>
 #include <cstddef>
-#include <cstdint>
 #include <initializer_list>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
-#include <string>
 #include <unordered_map>
 #include <utility>
-#include <variant>
-#include <vector>
 
 
 namespace lox::parser{
-    using ubyte = uint8_t;
+    using lox::ubyte;
+    using lox::callable::EvalResult;
+    using lox::callable::CallablePtr;
+    using lox::callable::is_number;
+    using lox::callable::is_string;
+    using lox::callable::is_boolean;
+    using lox::callable::is_callable;
 
     using lox::env::Environment;
     using lox::tokenizer::token::Token;
@@ -42,13 +45,11 @@ namespace lox::parser{
     using std::move;
     using std::nullptr_t;
     using std::ostringstream;
-    using std::string;
+    using std::runtime_error;
     using std::shared_ptr;
     using std::unitbuf;
     using std::unordered_map;
     using std::unreachable;
-    using std::variant;
-    using std::vector;
 
     class parse_error: public exception{
         ubyte return_code;
@@ -65,8 +66,6 @@ namespace lox::parser{
     };
 
     namespace ast{
-        using EvalResult = lox::env::VarValue;
-
         bool is_truthy(EvalResult eval_result);
 
         // region Expressions
@@ -217,6 +216,19 @@ namespace lox::parser{
 
                 [[nodiscard]] EvalResult evaluate() const final;
         };
+
+        class CallExpr: public Expr{
+            shared_ptr<Expr> callee;
+            Token& paren;
+            vector<shared_ptr<Expr>> args;
+
+            public:
+                CallExpr(const shared_ptr<Expr>& callee, Token& paren, const vector<shared_ptr<Expr>>& args);
+
+                [[nodiscard]] string to_string() const final;
+
+                [[nodiscard]] EvalResult evaluate() const final;
+        };
         // endregion
 
         // Base class for statements. A statement is an instruction executed by the interpreter.
@@ -359,6 +371,10 @@ namespace lox::parser{
         [[nodiscard]] ExprPtr get_factor();
 
         [[nodiscard]] ExprPtr get_unary();
+
+        [[nodiscard]] ExprPtr get_call();
+
+        [[nodiscard]] ExprPtr get_call_end(const ExprPtr& callee);
 
         [[nodiscard]] ExprPtr get_primary();
         // endregion

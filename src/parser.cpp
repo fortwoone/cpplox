@@ -4,8 +4,6 @@
 
 #include "parser.hpp"
 
-#include <utility>
-
 
 namespace lox::parser{
 #   define as_double get<double>
@@ -280,6 +278,48 @@ namespace lox::parser{
         }
         // endregion
 
+        // region CallExpr
+        CallExpr::CallExpr(const shared_ptr<Expr>& callee, Token& paren, const vector<shared_ptr<Expr>>& args)
+        : callee(callee), paren(paren), args(args){}
+
+        string CallExpr::to_string() const{
+            auto ret = callee->to_string() + "(";
+
+            for (const auto& arg: args){
+                ret += arg->to_string();
+                if (arg != args.back()){
+                    ret += ", ";
+                }
+            }
+            ret += ")";
+
+            return ret;
+        };
+
+        EvalResult CallExpr::evaluate() const{
+            EvalResult callee_eval = callee->evaluate();
+
+            if (!is_callable(callee_eval)){
+                throw runtime_error("Given object is not callable.");
+            }
+
+            vector<EvalResult> args_evaled;
+            args_evaled.reserve(args.size());
+            for (const auto& arg: args){
+                args_evaled.push_back(arg->evaluate());
+            }
+
+
+            CallablePtr func = get<CallablePtr>(callee_eval);
+
+            if (args_evaled.size() != func->arity()){
+                throw runtime_error("Expected " + std::to_string(func->arity()) + " arguments, got " + std::to_string(args_evaled.size()));
+            }
+
+            return func->call(args_evaled);
+        }
+        // endregion
+
         // region ExprStatement
         void ExprStatement::execute() const{
             EvalResult result = expr->evaluate();
@@ -447,6 +487,41 @@ namespace lox::parser{
         throw parse_error(65, "There is no literal to parse.");
     }
 
+    ExprPtr Parser::get_call_end(const ExprPtr& callee){  // NOLINT
+        using enum TokenType;
+
+        vector<ExprPtr> args;
+        if (!check(RIGHT_PAREN)){
+            do {
+                if (args.size() >= 255){
+                    throw parse_error(65, "Cannot have more than 255 arguments in a function.");
+                }
+                args.push_back(get_expr());
+            } while (match(COMMA));
+        }
+
+        Token& paren = consume(RIGHT_PAREN, "Expected ')' after arguments.");
+
+        return make_shared<ast::CallExpr>(
+            callee,
+            paren,
+            args
+        );
+    }
+
+    ExprPtr Parser::get_call(){  // NOLINT
+        ExprPtr expr = get_primary();
+        while (true){
+            if (match(TokenType::LEFT_PAREN)){
+                expr = get_call_end(expr);
+            }
+            else{
+                break;
+            }
+        }
+        return expr;
+    }
+
     ExprPtr Parser::get_unary(){  // NOLINT
         using enum TokenType;
         if (match({BANG, MINUS})){
@@ -458,7 +533,7 @@ namespace lox::parser{
             );
         }
 
-        return get_primary();
+        return get_call();
     }
 
     ExprPtr Parser::get_factor(){  // NOLINT

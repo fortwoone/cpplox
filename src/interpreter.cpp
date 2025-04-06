@@ -5,15 +5,25 @@
 #include "interpreter.hpp"
 
 namespace lox::interpreter{
+    void Interpreter::define_builtins(){
+        globals->set("clock", make_shared<builtins::ClockFunc>());
+    }
+
     Interpreter::Interpreter(const string& file_contents){
         env = make_shared<Environment>();
+        globals = env;
+        define_builtins();
         bool contains_errors = false;
 
         Parser parser = Parser(tokenize(file_contents, &contains_errors), env);
         statements = parser.parse();
     }
 
-    Interpreter::Interpreter(const vector<StmtPtr>& statements): statements(statements){}
+    Interpreter::Interpreter(const vector<StmtPtr>& statements): statements(statements){
+        env = make_shared<Environment>();
+        globals = env;
+        define_builtins();
+    }
 
     void Interpreter::execute_var_statement(const shared_ptr<VariableStatement>& var_stmt){
         VarValue val = "nil";

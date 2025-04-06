@@ -6,6 +6,7 @@
 #include "tokenizer.hpp"
 #include "parser.hpp"
 #include "env.hpp"
+#include "callable.hpp"
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -13,6 +14,7 @@
 #include <vector>
 
 namespace lox::interpreter{
+    namespace builtins = lox::callable::builtins;
     using lox::env::Environment;
     using lox::env::VarValue;
     using lox::parser::parse_error;
@@ -32,8 +34,10 @@ namespace lox::interpreter{
 
     class Interpreter{
         vector<StmtPtr> statements;
+        shared_ptr<Environment> globals;
         shared_ptr<Environment> env;
 
+        void define_builtins();
         void execute_var_statement(const shared_ptr<VariableStatement>& var_stmt);
 
         public:

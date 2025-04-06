@@ -3,11 +3,10 @@
 //
 
 #pragma once
+#include "callable.hpp"
 #include <memory>
 #include <stdexcept>
-#include <string>
 #include <unordered_map>
-#include <variant>
 
 namespace lox::env{
     using std::shared_ptr;
@@ -17,7 +16,7 @@ namespace lox::env{
     using std::unordered_map;
     using std::variant;
 
-    using VarValue = variant<double, bool, string>;
+    using lox::callable::VarValue;
 
     class Environment{
         unordered_map<string, VarValue> vars;
