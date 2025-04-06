@@ -330,10 +330,14 @@ namespace lox::parser{
         void PrintStatement::execute() const{
             EvalResult result = expr->evaluate();
             if (holds_alternative<bool>(result)){
-                cout << (as_bool(result) ? "true" : "false") << endl;
+                cout << boolalpha << as_bool(result) << noboolalpha << endl;
             }
             else if (holds_alternative<double>(result)){
-                cout << as_double(result) << endl;
+                ostringstream calc_str_val;
+                calc_str_val << fixed << as_double(result);
+                auto nb_lit = NumberLiteral(calc_str_val.str());
+                nb_lit.set_show_point(false);
+                cout << nb_lit.get_formatted_value() << endl;
             }
             else{
                 cout << as_string(result) << endl;
@@ -900,7 +904,7 @@ namespace lox::parser{
                 cout << as_double(result) << endl;
             }
             else if (holds_alternative<bool>(result)){
-                cout << (as_bool(result) ? "true" : "false") << endl;
+                cout << boolalpha << as_bool(result) << noboolalpha << endl;
             }
             else{
                 cout << as_string(result) << endl;

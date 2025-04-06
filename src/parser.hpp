@@ -27,22 +27,26 @@ namespace lox::parser{
     using lox::callable::is_callable;
 
     using lox::env::Environment;
+    using lox::tokenizer::literals::NumberLiteral;
     using lox::tokenizer::token::Token;
     using lox::tokenizer::token::TokenType;
     using lox::tokenizer::tokenize;
 
     using std::any_of;
+    using std::boolalpha;
     using std::cout;
     using std::cerr;
     using std::dynamic_pointer_cast;
     using std::endl;
     using std::exception;
+    using std::fixed;
     using std::get;
     using std::holds_alternative;
     using std::initializer_list;
     using std::invalid_argument;
     using std::make_shared;
     using std::move;
+    using std::noboolalpha;
     using std::nullptr_t;
     using std::ostringstream;
     using std::runtime_error;

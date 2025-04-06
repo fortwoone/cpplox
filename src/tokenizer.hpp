@@ -25,6 +25,7 @@ namespace lox{
         using std::exchange;
         using std::exit;
         using std::fixed;
+        using std::noshowpoint;
         using std::ostringstream;
         using std::setprecision;
         using std::stoi;
@@ -73,9 +74,14 @@ namespace lox{
             class NumberLiteral: public Literal{
                 double val_as_dbl;
                 size_t precision;
+                size_t actual_dec_count;
+                bool show_point = true;
 
                 public:
                     explicit NumberLiteral(const string& orig_val);
+                    void set_show_point(bool val){
+                        show_point = val;
+                    }
                     [[nodiscard]] string get_formatted_value() const final;
             };
         }
