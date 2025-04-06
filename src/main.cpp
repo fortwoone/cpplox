@@ -71,6 +71,7 @@ int main(int argc, char *argv[]) {
     }
     else if (command == "run"){
         string file_contents = read_file_contents(argv[2]);
+        cout << fixed;
         try{
             lox::interpreter::run(file_contents);
         }
