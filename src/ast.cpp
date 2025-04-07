@@ -716,6 +716,13 @@ namespace lox::ast{
     // endregion
 
     // region ReturnStmt
+    void ReturnStmt::execute(const shared_ptr<Environment>& env){
+        if (expr == nullptr){
+            throw return_exc("nil");
+        }
+        throw return_exc(expr->evaluate(env));
+    }
+
     void ReturnStmt::execute(const shared_ptr<Interpreter>& interpreter){
         if (expr == nullptr){
             throw return_exc("nil");
