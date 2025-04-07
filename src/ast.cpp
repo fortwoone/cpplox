@@ -360,9 +360,11 @@ namespace lox::ast{
             : statements(std::move(statements)){}
 
     void BlockStatement::execute(const shared_ptr<Interpreter>& interpreter){
+        add_nesting_level(interpreter);
         for (const auto& stmt: statements){
             stmt->execute(interpreter);
         }
+        remove_nesting_level(interpreter);
     }
     // endregion
 
