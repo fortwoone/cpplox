@@ -508,7 +508,7 @@ namespace lox::parser{
     ubyte Parser::evaluate(){
         try{
             ExprPtr expr = parse_old();
-            auto result = expr->evaluate(nullptr);
+            auto result = expr->evaluate(make_shared<Environment>());
             if (holds_alternative<double>(result)){
                 cout << as_double(result) << endl;
             }

@@ -7,6 +7,7 @@
 #include "ast.hpp"
 #include "exceptions.hpp"
 #include "callable.hpp"
+#include "env.hpp"
 #include <algorithm>
 #include <cstddef>
 #include <initializer_list>
@@ -28,6 +29,7 @@ namespace lox::parser{
     using lox::callable::is_string;
     using lox::callable::is_boolean;
     using lox::callable::is_callable;
+    using lox::env::Environment;
 
     using lox::tokenizer::literals::NumberLiteral;
     using lox::tokenizer::token::Token;
