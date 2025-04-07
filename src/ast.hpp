@@ -74,6 +74,7 @@ namespace lox::ast{
         public:
             virtual ~Expr() = default;
             [[nodiscard]] virtual string to_string() const = 0;
+            [[nodiscard]] virtual EvalResult evaluate(const shared_ptr<Environment>& env) const = 0;
             [[nodiscard]] virtual EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const = 0;
     };
 
@@ -99,6 +100,7 @@ namespace lox::ast{
             explicit LiteralExpr(LiteralExprType type, string value): expr_type(type), value(std::move(value)){}
 
             [[nodiscard]] string to_string() const final;
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) const final;
             [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const final;
     };
 
@@ -131,6 +133,7 @@ namespace lox::ast{
 
             [[nodiscard]] string to_string() const final;
 
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) const override = 0;
             [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const override = 0;
     };
 
@@ -139,6 +142,7 @@ namespace lox::ast{
             BinaryExpr(shared_ptr<Expr> left, Operator op, shared_ptr<Expr> right)
                     : AbstractBinaryExpr(std::move(left), op, std::move(right)){}
 
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) const final;
             [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const final;
     };
 
@@ -151,6 +155,10 @@ namespace lox::ast{
             [[nodiscard]] string to_string() const final{
                 return "(group " + expr->to_string() + ")";
             }
+
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) const final{
+                return expr->evaluate(env);
+            };
 
             [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const final{
                 return expr->evaluate(interpreter);
@@ -166,6 +174,7 @@ namespace lox::ast{
 
             [[nodiscard]] string to_string() const final;
 
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) const final;
             [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const final;
     };
 
@@ -184,6 +193,7 @@ namespace lox::ast{
                 return name;
             };
 
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) const override = 0;
             [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const override = 0;
     };
 
@@ -191,6 +201,7 @@ namespace lox::ast{
         public:
             explicit VariableExpr(const Token& id_token);
 
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) const final;
             [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const final;
     };
 
@@ -204,6 +215,7 @@ namespace lox::ast{
                 return value;
             };
 
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) const final;
             [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const final;
     };
 
@@ -216,6 +228,7 @@ namespace lox::ast{
                 }
             }
 
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) const final;
             [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const final;
     };
 
@@ -229,6 +242,7 @@ namespace lox::ast{
 
             [[nodiscard]] string to_string() const final;
 
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) const final;
             [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const final;
     };
     // endregion
@@ -237,6 +251,7 @@ namespace lox::ast{
     class Statement: public enable_shared_from_this<Statement>{
         public:
             virtual ~Statement() = default;
+            virtual void execute(const shared_ptr<Environment>& env) = 0;
             virtual void execute(const shared_ptr<Interpreter>& interpreter) = 0;
     };
 
@@ -250,14 +265,15 @@ namespace lox::ast{
                 return expr;
             }
 
+            void execute(const shared_ptr<Environment>& env) override = 0;
             void execute(const shared_ptr<Interpreter>& interpreter) override = 0;
     };
 
     class ExprStatement: public StatementWithExpr{
-        shared_ptr<Environment> env;
         public:
             explicit ExprStatement(shared_ptr<Expr> expr): StatementWithExpr(std::move(expr)){}
 
+            void execute(const shared_ptr<Environment>& env) final;
             void execute(const shared_ptr<Interpreter>& interpreter) final;
     };
 
@@ -265,6 +281,7 @@ namespace lox::ast{
         public:
             explicit PrintStatement(shared_ptr<Expr> expr): StatementWithExpr(std::move(expr)){}
 
+            void execute(const shared_ptr<Environment>& env) final;
             void execute(const shared_ptr<Interpreter>& interpreter) final;
     };
 
@@ -282,6 +299,7 @@ namespace lox::ast{
                 return expr;
             }
 
+            void execute(const shared_ptr<Environment>& env) final;
             void execute(const shared_ptr<Interpreter>& interpreter) final;
     };
 
@@ -291,6 +309,7 @@ namespace lox::ast{
         public:
             explicit BlockStatement(vector<shared_ptr<Statement>> statements);
 
+            void execute(const shared_ptr<Environment>& env) final;
             void execute(const shared_ptr<Interpreter>& interpreter) final;
     };
 
@@ -302,6 +321,7 @@ namespace lox::ast{
         public:
             AbstractLogicalStmt(shared_ptr<Expr> condition, shared_ptr<Statement> success);
 
+            void execute(const shared_ptr<Environment>& env) override = 0;
             void execute(const shared_ptr<Interpreter>& interpreter) override = 0;
     };
 
@@ -312,6 +332,7 @@ namespace lox::ast{
             IfStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success, shared_ptr<Statement> failure);
             IfStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success);
 
+            void execute(const shared_ptr<Environment>& env) final;
             void execute(const shared_ptr<Interpreter>& interpreter) final;
     };
 
@@ -319,6 +340,7 @@ namespace lox::ast{
         public:
             WhileStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success);
 
+            void execute(const shared_ptr<Environment>& env) final;
             void execute(const shared_ptr<Interpreter>& interpreter) final;
     };
 
@@ -327,6 +349,7 @@ namespace lox::ast{
         vector<Token> args;
         vector<shared_ptr<Statement>> body;
 
+        friend EvalResult for_callable::exec_func_body(const shared_ptr<Environment>& env, const shared_ptr<Statement>& func_stmt);
         friend EvalResult for_callable::exec_func_body(const shared_ptr<Interpreter>& interpreter, const shared_ptr<Statement>& func_stmt);
         friend vector<Token> for_callable::get_args(const shared_ptr<Statement>& func_stmt);
         friend string for_callable::get_func_name(const shared_ptr<Statement>& func_stmt);
@@ -338,6 +361,7 @@ namespace lox::ast{
                 return static_cast<ubyte>(args.size());
             }
 
+            void execute(const shared_ptr<Environment>& env) final;
             void execute(const shared_ptr<Interpreter>& interpreter) final;
     };
 
@@ -345,6 +369,7 @@ namespace lox::ast{
         public:
             explicit ReturnStmt(const shared_ptr<Expr>& expr): StatementWithExpr(expr){}
 
+            void execute(const shared_ptr<Environment>& env) final;
             void execute(const shared_ptr<Interpreter>& interpreter) final;
     };
 

@@ -79,7 +79,7 @@ namespace lox::ast{
         }
     }
 
-    EvalResult LiteralExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
+    EvalResult LiteralExpr::evaluate(const shared_ptr<Environment>& env) const{
         switch (expr_type){
             case LiteralExprType::TRUE:
                 return true;
@@ -93,6 +93,10 @@ namespace lox::ast{
                 return value;
         }
     }
+
+    EvalResult LiteralExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
+        return evaluate(get_current_env(interpreter));
+    }
     // endregion
 
     // region AbstractBinaryExpr
@@ -102,6 +106,95 @@ namespace lox::ast{
     // endregion
 
     // region BinaryExpr
+    EvalResult BinaryExpr::evaluate(const shared_ptr<Environment>& env) const{
+        using enum Operator;
+        EvalResult left_result = left->evaluate(env), right_result = right->evaluate(env);
+        bool two_numbers = holds_alternative<double>(left_result) && holds_alternative<double>(right_result);
+        bool two_bools = holds_alternative<bool>(left_result) && holds_alternative<bool>(right_result);
+        bool two_strings = holds_alternative<string>(left_result) && holds_alternative<string>(right_result);
+
+        switch (op){
+            case PLUS:
+                if (two_numbers){
+                    return as_double(left_result) + as_double(right_result);
+                }
+                else if (two_strings){
+                    ostringstream concat_stream;
+                    concat_stream << as_string(left_result) << as_string(right_result);
+                    return concat_stream.str();
+                }
+                break;
+            case MINUS:
+                if (two_numbers){
+                    return as_double(left_result) - as_double(right_result);
+                }
+                break;
+            case STAR:
+                if (two_numbers){
+                    return as_double(left_result) * as_double(right_result);
+                }
+                break;
+            case SLASH:
+                if (two_numbers){
+                    return as_double(left_result) / as_double(right_result);
+                }
+                break;
+            case LESS:
+                if (two_numbers){
+                    return as_double(left_result) < as_double(right_result);
+                }
+                else{
+                    throw parse_error(70, "Unsupported operation.\0");
+                }
+            case GREATER:
+                if (two_numbers){
+                    return as_double(left_result) > as_double(right_result);
+                }
+                else{
+                    throw parse_error(70, "Unsupported operation.\0");
+                }
+            case LESS_EQUAL:
+                if (two_numbers){
+                    return as_double(left_result) <= as_double(right_result);
+                }
+                else{
+                    throw parse_error(70, "Unsupported operation.\0");
+                }
+            case GREATER_EQUAL:
+                if (two_numbers){
+                    return as_double(left_result) >= as_double(right_result);
+                }
+                else {
+                    throw parse_error(70, "Unsupported operation.\0");
+                }
+            case EQUALITY:
+                if (two_numbers){
+                    return as_double(left_result) == as_double(right_result);
+                }
+                else if (two_bools){
+                    return as_bool(left_result) == as_bool(right_result);
+                }
+                else if (two_strings){
+                    return as_string(left_result) == as_string(right_result);
+                }
+                return false;
+            case INEQUALITY:
+                if (two_numbers){
+                    return as_double(left_result) != as_double(right_result);
+                }
+                else if (two_bools){
+                    return as_bool(left_result) != as_bool(right_result);
+                }
+                else if (two_strings){
+                    return as_string(left_result) != as_string(right_result);
+                }
+                return true;
+            default:
+                throw parse_error(70, "Unsupported operation.\0");
+        }
+        throw parse_error(70, "Unsupported operation.\0");
+    }
+
     EvalResult BinaryExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
         using enum Operator;
         EvalResult left_result = left->evaluate(interpreter), right_result = right->evaluate(interpreter);
@@ -197,6 +290,35 @@ namespace lox::ast{
         return "(" + _OP_TO_SYM.at(op) + " " + operand->to_string() + ")";
     }
 
+    EvalResult UnaryExpr::evaluate(const shared_ptr<Environment>& env) const{
+        EvalResult evaluated_operand = operand->evaluate(env);
+
+        if (holds_alternative<bool>(evaluated_operand)){
+            if (op == Operator::BANG){
+                return !as_bool(evaluated_operand);
+            }
+        }
+        else if (holds_alternative<double>(evaluated_operand)){
+            switch (op){
+                case Operator::MINUS:
+                    return -as_double(evaluated_operand);
+                case Operator::BANG:
+                    return false;
+                default:
+                    break;
+            }
+        }
+        else{
+            switch (op){
+                case Operator::BANG:
+                    return as_string(evaluated_operand) == "nil";
+                default:
+                    break;
+            }
+        }
+        throw parse_error(70, "Invalid operand for unary expression.\0");
+    }
+
     EvalResult UnaryExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
         EvalResult evaluated_operand = operand->evaluate(interpreter);
 
@@ -237,14 +359,24 @@ namespace lox::ast{
         }
     }
 
+    EvalResult VariableExpr::evaluate(const shared_ptr<Environment>& env) const{
+        return env->get(name);
+    }
+
     EvalResult VariableExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
-        return get_current_env(interpreter)->get(name);
+        return evaluate(get_current_env(interpreter));
     }
     // endregion
 
     // region AssignmentExpr
     AssignmentExpr::AssignmentExpr(string name, shared_ptr<Expr> value)
             : AbstractVarExpr(std::move(name)), value(std::move(value)){}
+
+    EvalResult AssignmentExpr::evaluate(const shared_ptr<Environment>& env) const{
+        EvalResult val = value->evaluate(env);
+        env->assign(name, val);
+        return val;
+    }
 
     EvalResult AssignmentExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
         EvalResult val = value->evaluate(interpreter);
@@ -254,6 +386,19 @@ namespace lox::ast{
     // endregion
 
     // region LogicalExpr
+    EvalResult LogicalExpr::evaluate(const shared_ptr<Environment>& env) const{
+        EvalResult left_evaled = left->evaluate(env);
+
+        switch (op){
+            case Operator::OR:
+                return (is_truthy(left_evaled) ? left_evaled : right->evaluate(env));
+            case Operator::AND:
+                return (is_truthy(left_evaled) ? right->evaluate(env) : left_evaled);
+            default:
+                unreachable();
+        }
+    }
+
     EvalResult LogicalExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
         EvalResult left_evaled = left->evaluate(interpreter);
 
@@ -286,6 +431,29 @@ namespace lox::ast{
         return ret;
     };
 
+    EvalResult CallExpr::evaluate(const shared_ptr<Environment>& env) const{
+        EvalResult callee_eval = callee->evaluate(env);
+
+        if (!is_callable(callee_eval)){
+            throw runtime_error("Given object is not callable.");
+        }
+
+        vector<EvalResult> args_evaled;
+        args_evaled.reserve(args.size());
+        for (const auto& arg: args){
+            args_evaled.push_back(arg->evaluate(env));
+        }
+
+
+        CallablePtr func = as_func(callee_eval);
+
+        if (args_evaled.size() != func->arity()){
+            throw runtime_error("Expected " + std::to_string(func->arity()) + " arguments, got " + std::to_string(args_evaled.size()));
+        }
+
+        return func->call(env, args_evaled);
+    }
+
     EvalResult CallExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
         EvalResult callee_eval = callee->evaluate(interpreter);
 
@@ -311,12 +479,40 @@ namespace lox::ast{
     // endregion
 
     // region ExprStatement
+    void ExprStatement::execute(const shared_ptr<Environment>& env){
+        EvalResult result = expr->evaluate(env);
+    }
+
     void ExprStatement::execute(const shared_ptr<Interpreter>& interpreter){
         EvalResult result = expr->evaluate(interpreter);
     }
     // endregion
 
     // region PrintStatement
+    void PrintStatement::execute(const shared_ptr<Environment>& env){
+        EvalResult result = expr->evaluate(env);
+        if (holds_alternative<bool>(result)){
+            cout << (as_bool(result) ? "true" : "false") << endl;
+        }
+        else if (holds_alternative<double>(result)){
+            auto previous = cout.precision();
+            if (static_cast<int>(as_double(result)) == as_double(result)){
+                cout << fixed << setprecision(0);
+            }
+            cout << as_double(result) << endl;
+            if (static_cast<int>(as_double(result)) == as_double(result)){
+                cout << setprecision(previous);
+                cout.unsetf(std::ios_base::fixed);
+            }
+        }
+        else if (holds_alternative<CallablePtr>(result)){
+            cout << as_func(result)->to_string() << endl;
+        }
+        else{
+            cout << as_string(result) << endl;
+        }
+    }
+
     void PrintStatement::execute(const shared_ptr<Interpreter>& interpreter){
         EvalResult result = expr->evaluate(interpreter);
         if (holds_alternative<bool>(result)){
@@ -345,6 +541,15 @@ namespace lox::ast{
     // region VariableStatement
     VariableStatement::VariableStatement(const string& name, shared_ptr<Expr> init_expr): name(name), StatementWithExpr(init_expr){}  // NOLINT
 
+    void VariableStatement::execute(const shared_ptr<Environment>& env){
+        EvalResult val = "nil";
+        if (expr != nullptr){
+            val = expr->evaluate(env);
+        }
+
+        env->set(name, val);
+    }
+
     void VariableStatement::execute(const shared_ptr<Interpreter>& interpreter){
         EvalResult val = "nil";
         if (expr != nullptr){
@@ -358,6 +563,13 @@ namespace lox::ast{
     // region BlockStatement
     BlockStatement::BlockStatement(vector<shared_ptr<Statement>> statements)
             : statements(std::move(statements)){}
+
+    void BlockStatement::execute(const shared_ptr<Environment>& env){
+        shared_ptr<Environment> child_env = make_shared<Environment>(env);
+        for (const auto& stmt: statements){
+            stmt->execute(child_env);
+        }
+    }
 
     void BlockStatement::execute(const shared_ptr<Interpreter>& interpreter){
         add_nesting_level(interpreter);
@@ -380,6 +592,16 @@ namespace lox::ast{
     IfStatement::IfStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success)
             : AbstractLogicalStmt(std::move(condition), std::move(success)), on_failure(nullptr){}
 
+    void IfStatement::execute(const shared_ptr<Environment>& env){
+        EvalResult condit_evaled = condition->evaluate(env);
+        if (is_truthy(condit_evaled)){
+            return on_success->execute(env);
+        }
+        if (on_failure != nullptr){
+            return on_failure->execute(env);
+        }
+    }
+
     void IfStatement::execute(const shared_ptr<Interpreter>& interpreter){
         EvalResult condit_evaled = condition->evaluate(interpreter);
         if (is_truthy(condit_evaled)){
@@ -394,6 +616,12 @@ namespace lox::ast{
     // region WhileStatement
     WhileStatement::WhileStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success)
             : AbstractLogicalStmt(std::move(condition), std::move(success)){}
+
+    void WhileStatement::execute(const shared_ptr<Environment>& env){
+        while (is_truthy(condition->evaluate(env))){
+            on_success->execute(env);
+        }
+    }
 
     void WhileStatement::execute(const shared_ptr<Interpreter>& interpreter){
         while (is_truthy(condition->evaluate(interpreter))){
@@ -411,15 +639,36 @@ namespace lox::ast{
         }
     }
 
-    void FunctionStmt::execute(const shared_ptr<Interpreter>& interpreter){
+    void FunctionStmt::execute(const shared_ptr<Environment>& env){
         shared_ptr<Statement> shared = shared_from_this();
-        get_current_env(interpreter)->set(
+        env->set(
             name,
-            make_shared<LoxFunction>(shared)
+            make_shared<LoxFunction>(shared, env)
         );
     }
 
+    void FunctionStmt::execute(const shared_ptr<Interpreter>& interpreter){
+        execute(get_current_env(interpreter));
+    }
+
     namespace for_callable{
+        EvalResult exec_func_body(const shared_ptr<Environment>& env, const shared_ptr<Statement>& func_stmt){
+            auto as_func_stmt = dynamic_pointer_cast<FunctionStmt>(func_stmt);
+            if (as_func_stmt == nullptr){
+                return "nil";
+            }
+
+            try {
+                for (const auto& stmt: as_func_stmt->body){
+                    stmt->execute(env);
+                }
+                return "nil";
+            }
+            catch (const return_exc& returned_exc){
+                return returned_exc.get_returned_val();
+            }
+        }
+
         EvalResult exec_func_body(const shared_ptr<Interpreter>& interpreter, const shared_ptr<Statement>& func_stmt){
             auto as_func_stmt = dynamic_pointer_cast<FunctionStmt>(func_stmt);
             if (as_func_stmt == nullptr){

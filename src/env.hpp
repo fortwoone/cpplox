@@ -10,6 +10,7 @@
 #include <variant>
 
 namespace lox::env{
+    using std::enable_shared_from_this;
     using std::make_shared;
     using std::out_of_range;
     using std::runtime_error;
@@ -20,7 +21,7 @@ namespace lox::env{
 
     using lox::callable::VarValue;
 
-    class Environment{
+    class Environment: public enable_shared_from_this<Environment>{
         unordered_map<string, VarValue> vars;
         shared_ptr<Environment> enclosing; // Reference to parent environment for local scopes.
 
@@ -38,9 +39,15 @@ namespace lox::env{
             void set(const string& name, VarValue val);
 
             void assign(const string& name, VarValue val);
+
+            [[nodiscard]] shared_ptr<Environment> get_nested_env(){
+                return make_shared<Environment>(shared_from_this());
+            }
     };
 
     namespace for_callable{
+        shared_ptr<Environment> get_child_env(const shared_ptr<Environment>& orig);
+
         void set_env_member(const shared_ptr<Environment>& func_env, const string& name, VarValue value);
     }
 }

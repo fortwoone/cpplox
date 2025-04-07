@@ -40,7 +40,6 @@ namespace lox::interpreter{
         shared_ptr<Environment> env;
 
         void define_builtins();
-        void execute_var_statement(const shared_ptr<VariableStatement>& var_stmt);
 
         public:
             explicit Interpreter(const string& file_contents);
