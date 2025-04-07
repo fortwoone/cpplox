@@ -96,8 +96,7 @@ namespace lox::parser{
         return make_shared<ast::CallExpr>(
             callee,
             paren,
-            args,
-            globals
+            args
         );
     }
 
@@ -489,13 +488,20 @@ namespace lox::parser{
             is_method ? "Expected '{' before method body." : "Expected '{' before function body."
         );
 
-        vector<StmtPtr> body = get_block_stmt();
-        return make_shared<ast::FunctionStmt>(
+        env = make_shared<Environment>(env);
+        shared_ptr<ast::BlockStatement> body = make_shared<ast::BlockStatement>(
+            get_block_stmt(),
+            env
+        );
+        auto ret = make_shared<ast::FunctionStmt>(
             name,
             args,
             body,
             globals
         );
+
+        env = env->get_enclosing();
+        return ret;
     }
 
     StmtPtr Parser::get_declaration(){  // NOLINT

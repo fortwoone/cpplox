@@ -281,8 +281,8 @@ namespace lox::ast{
     // endregion
 
     // region CallExpr
-    CallExpr::CallExpr(const shared_ptr<Expr>& callee, Token& paren, const vector<shared_ptr<Expr>>& args, const shared_ptr<Environment>& globals)
-            : callee(callee), paren(paren), args(args), globals_env(globals){}
+    CallExpr::CallExpr(const shared_ptr<Expr>& callee, Token& paren, const vector<shared_ptr<Expr>>& args)
+            : callee(callee), paren(paren), args(args){}
 
     string CallExpr::to_string() const{
         auto ret = callee->to_string() + "(";
@@ -318,7 +318,7 @@ namespace lox::ast{
             throw runtime_error("Expected " + std::to_string(func->arity()) + " arguments, got " + std::to_string(args_evaled.size()));
         }
 
-        return func->call(globals_env, args_evaled);
+        return func->call(args_evaled);
     }
     // endregion
 
@@ -393,13 +393,6 @@ namespace lox::ast{
             stmt->execute();
         }
     }
-
-    namespace for_callable{
-        void exec_stmt_list_as_block(const vector<shared_ptr<Statement>>& stmts, const shared_ptr<Environment>& env) {
-            shared_ptr<BlockStatement> as_block = make_shared<BlockStatement>(stmts, env);
-            as_block->execute();
-        }
-    }
     // endregion
 
     // region AbstractLogicalStmt
@@ -437,7 +430,7 @@ namespace lox::ast{
     // endregion
 
     // region FunctionStmt
-    FunctionStmt::FunctionStmt(const Token& id_token, const vector<Token>& args, const vector<shared_ptr<Statement>>& body, const shared_ptr<Environment>& globals)
+    FunctionStmt::FunctionStmt(const Token& id_token, const vector<Token>& args, const shared_ptr<BlockStatement>& body, const shared_ptr<Environment>& globals)
     : args(args), body(body), globals_env(globals){
         name = id_token.get_lexeme();
         if (args.size() >= 255){
@@ -445,15 +438,40 @@ namespace lox::ast{
         }
     }
 
+    void FunctionStmt::execute(){
+        shared_ptr<Statement> shared = shared_from_this();
+        globals_env->set(
+                name,
+                make_shared<LoxFunction>(shared)
+        );
+    }
+
     namespace for_callable{
-        vector<shared_ptr<Statement>> get_func_body(const shared_ptr<Statement> &func_stmt) {
-            vector<shared_ptr<Statement>> ret;
+        shared_ptr<Environment> get_func_env(const shared_ptr<Statement>& func_stmt){
             auto as_func_stmt = dynamic_pointer_cast<FunctionStmt>(func_stmt);
-            if (as_func_stmt == nullptr) {
-                return ret;
+            if (as_func_stmt == nullptr){
+                return nullptr;
             }
 
-            return {as_func_stmt->body};
+            auto as_block_body = dynamic_pointer_cast<BlockStatement>(as_func_stmt->body);
+            if (as_block_body == nullptr){
+                return nullptr;
+            }
+
+            return as_block_body->env;
+        }
+
+        void exec_func_body(const shared_ptr<Statement>& func_stmt){
+            auto as_func_stmt = dynamic_pointer_cast<FunctionStmt>(func_stmt);
+            if (as_func_stmt == nullptr){
+                return;
+            }
+
+            auto as_block_body = dynamic_pointer_cast<BlockStatement>(as_func_stmt->body);
+            if (as_block_body == nullptr){
+                return;
+            }
+            as_block_body->execute();
         }
 
         string get_func_name(const shared_ptr<Statement>& func_stmt){
@@ -482,14 +500,6 @@ namespace lox::ast{
             }
             return as_func_stmt->get_arg_count();
         }
-    }
-
-    void FunctionStmt::execute(){
-        shared_ptr<Statement> shared = shared_from_this();
-        globals_env->set(
-            name,
-            make_shared<LoxFunction>(shared)
-        );
     }
     // endregion
 }

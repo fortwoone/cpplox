@@ -204,13 +204,12 @@ namespace lox::ast{
     };
 
     class CallExpr: public Expr{
-        shared_ptr<Environment> globals_env;
         shared_ptr<Expr> callee;
         Token& paren;
         vector<shared_ptr<Expr>> args;
 
         public:
-            CallExpr(const shared_ptr<Expr>& callee, Token& paren, const vector<shared_ptr<Expr>>& args, const shared_ptr<Environment>& globals);
+            CallExpr(const shared_ptr<Expr>& callee, Token& paren, const vector<shared_ptr<Expr>>& args);
 
             [[nodiscard]] string to_string() const final;
 
@@ -274,6 +273,8 @@ namespace lox::ast{
         vector<shared_ptr<Statement>> statements;
         shared_ptr<Environment> env;
 
+        friend shared_ptr<Environment> for_callable::get_func_env(const shared_ptr<Statement>& func_stmt);
+
         void exec_var_stmt(const shared_ptr<VariableStatement>& var_stmt) const;
 
         public:
@@ -314,14 +315,15 @@ namespace lox::ast{
         string name;
         shared_ptr<Environment> globals_env;
         vector<Token> args;
-        vector<shared_ptr<Statement>> body;
+        shared_ptr<BlockStatement> body;
 
-        friend vector<shared_ptr<Statement>> for_callable::get_func_body(const shared_ptr<Statement> &func_stmt);
-        friend vector<Token> for_callable::get_args(const shared_ptr<Statement> &func_stmt);
+        friend void for_callable::exec_func_body(const shared_ptr<Statement>& func_stmt);
+        friend shared_ptr<Environment> for_callable::get_func_env(const shared_ptr<Statement>& func_stmt);
+        friend vector<Token> for_callable::get_args(const shared_ptr<Statement>& func_stmt);
         friend string for_callable::get_func_name(const shared_ptr<Statement>& func_stmt);
 
         public:
-            FunctionStmt(const Token& id_token, const vector<Token>& args, const vector<shared_ptr<Statement>>& body, const shared_ptr<Environment>& globals);
+            FunctionStmt(const Token& id_token, const vector<Token>& args, const shared_ptr<BlockStatement>& body, const shared_ptr<Environment>& globals);
 
             [[nodiscard]] ubyte get_arg_count() const{
                 return static_cast<ubyte>(args.size());
@@ -332,15 +334,15 @@ namespace lox::ast{
 
     // Functions only used in callable context. Must not be used elsewhere.
     namespace for_callable{
-        vector<shared_ptr<Statement>> get_func_body(const shared_ptr<Statement>& func_stmt);
+        shared_ptr<Environment> get_func_env(const shared_ptr<Statement>& func_stmt);
+
+        void exec_func_body(const shared_ptr<Statement>& func_stmt);
 
         string get_func_name(const shared_ptr<Statement>& func_stmt);
 
         vector<Token> get_args(const shared_ptr<Statement>& func_stmt);
 
         ubyte get_arg_count(const shared_ptr<Statement>& func_stmt);
-
-        void exec_stmt_list_as_block(const vector<shared_ptr<Statement>>& stmts, const shared_ptr<Environment>& env);
     }
 }
 
