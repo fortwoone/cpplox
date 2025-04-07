@@ -461,17 +461,24 @@ namespace lox::ast{
             return as_block_body->env;
         }
 
-        void exec_func_body(const shared_ptr<Statement>& func_stmt){
+        EvalResult exec_func_body(const shared_ptr<Statement>& func_stmt){
             auto as_func_stmt = dynamic_pointer_cast<FunctionStmt>(func_stmt);
             if (as_func_stmt == nullptr){
-                return;
+                return "nil";
             }
 
             auto as_block_body = dynamic_pointer_cast<BlockStatement>(as_func_stmt->body);
             if (as_block_body == nullptr){
-                return;
+                return "nil";
             }
-            as_block_body->execute();
+
+            try {
+                as_block_body->execute();
+                return "nil";
+            }
+            catch (const return_exc& returned_exc){
+                return returned_exc.get_returned_val();
+            }
         }
 
         string get_func_name(const shared_ptr<Statement>& func_stmt){
@@ -500,6 +507,15 @@ namespace lox::ast{
             }
             return as_func_stmt->get_arg_count();
         }
+    }
+    // endregion
+
+    // region ReturnStmt
+    void ReturnStmt::execute(){
+        if (expr == nullptr){
+            throw return_exc("nil");
+        }
+        throw return_exc(expr->evaluate());
     }
     // endregion
 }

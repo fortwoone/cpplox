@@ -317,7 +317,7 @@ namespace lox::ast{
         vector<Token> args;
         shared_ptr<BlockStatement> body;
 
-        friend void for_callable::exec_func_body(const shared_ptr<Statement>& func_stmt);
+        friend EvalResult for_callable::exec_func_body(const shared_ptr<Statement>& func_stmt);
         friend shared_ptr<Environment> for_callable::get_func_env(const shared_ptr<Statement>& func_stmt);
         friend vector<Token> for_callable::get_args(const shared_ptr<Statement>& func_stmt);
         friend string for_callable::get_func_name(const shared_ptr<Statement>& func_stmt);
@@ -332,11 +332,18 @@ namespace lox::ast{
             void execute() final;
     };
 
+    class ReturnStmt: public StatementWithExpr{
+        public:
+            explicit ReturnStmt(const shared_ptr<Expr>& expr): StatementWithExpr(expr){}
+
+            void execute() final;
+    };
+
     // Functions only used in callable context. Must not be used elsewhere.
     namespace for_callable{
         shared_ptr<Environment> get_func_env(const shared_ptr<Statement>& func_stmt);
 
-        void exec_func_body(const shared_ptr<Statement>& func_stmt);
+        EvalResult exec_func_body(const shared_ptr<Statement>& func_stmt);
 
         string get_func_name(const shared_ptr<Statement>& func_stmt);
 

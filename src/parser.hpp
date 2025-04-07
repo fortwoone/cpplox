@@ -117,6 +117,7 @@ namespace lox::parser{
         [[nodiscard]] StmtPtr get_expr_statement();
         [[nodiscard]] vector<StmtPtr> get_block_stmt();
         [[nodiscard]] StmtPtr get_while_stmt();
+        [[nodiscard]] StmtPtr get_return_stmt();
         [[nodiscard]] StmtPtr get_if_statement();
         [[nodiscard]] StmtPtr get_for_statement();
         [[nodiscard]] StmtPtr get_statement();

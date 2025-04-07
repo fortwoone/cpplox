@@ -29,8 +29,6 @@ namespace lox::ast{
     namespace for_callable {
         shared_ptr<Environment> get_func_env(const shared_ptr<Statement>& globals_env);
 
-        void exec_func_body(const shared_ptr<Statement>& func_stmt);
-
         string get_func_name(const shared_ptr<Statement>& func_stmt);
 
         vector<Token> get_args(const shared_ptr<Statement>& func_stmt);
@@ -46,7 +44,6 @@ namespace lox::interpreter{
 // Actual file declarations (part 1)
 namespace lox::callable {
     using lox::ubyte;
-    using lox::ast::for_callable::exec_func_body;
     using lox::ast::for_callable::get_args;
     using lox::ast::for_callable::get_arg_count;
     using lox::ast::for_callable::get_func_env;
@@ -82,6 +79,12 @@ namespace lox::callable {
 
 }
 
+namespace lox::ast::for_callable{
+    using lox::callable::EvalResult;
+
+    EvalResult exec_func_body(const shared_ptr<Statement>& func_stmt);
+}
+
 // Putting this here because we need VarValue from lox::callable for future accesses to the environment to work.
 namespace lox::env::for_callable{
     using lox::callable::VarValue;
@@ -91,6 +94,7 @@ namespace lox::env::for_callable{
 
 // Actual file declarations (part 2)
 namespace lox::callable{
+    using lox::ast::for_callable::exec_func_body;
     using lox::env::for_callable::set_env_member;
 
     bool is_number(const Value& val);

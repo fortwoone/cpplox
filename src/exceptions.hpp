@@ -4,6 +4,7 @@
 
 #pragma once
 #include <stdexcept>
+#include "callable.hpp"
 #include "utils.hpp"
 
 namespace lox{
@@ -21,5 +22,20 @@ namespace lox{
         [[nodiscard]] ubyte get_return_code() const noexcept{
             return return_code;
         }
+    };
+
+    namespace priv{
+        using lox::callable::Value;
+    }
+
+    class return_exc: public exception{
+        priv::Value ret_val;
+
+        public:
+            return_exc(priv::Value ret_val): exception(), ret_val(ret_val){}
+
+            [[nodiscard]] priv::Value get_returned_val() const{
+                return ret_val;
+            }
     };
 }

@@ -35,9 +35,7 @@ namespace lox::callable{
             set_env_member(func_env, decl_args.at(i).get_lexeme(), args.at(i));
         }
 
-        exec_func_body(decl);
-
-        return "nil";
+        return exec_func_body(decl);
     }
 
     namespace builtins{

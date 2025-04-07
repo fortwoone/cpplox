@@ -311,6 +311,18 @@ namespace lox::parser{
         );
     }
 
+    StmtPtr Parser::get_return_stmt(){  // NOLINT
+        ExprPtr val = nullptr;
+        if (!check(TokenType::SEMICOLON)){
+            val = get_expr();
+        }
+
+        consume(TokenType::SEMICOLON, "Expected ';' after return value.");
+        return make_shared<ast::ReturnStmt>(
+            val
+        );
+    }
+
     StmtPtr Parser::get_if_statement(){  // NOLINT
         using enum TokenType;
         consume(LEFT_PAREN, "Expected '(' after 'if' keyword.");
@@ -425,6 +437,9 @@ namespace lox::parser{
         }
         if (match(WHILE)){
             return get_while_stmt();
+        }
+        if (match(RETURN)){
+            return get_return_stmt();
         }
         if (match(PRINT)){
             return get_print_statement();
