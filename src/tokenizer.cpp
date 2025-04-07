@@ -152,24 +152,24 @@ namespace lox::tokenizer{
         // endregion
 
         Token::Token(TokenType token_tp): token_type(token_tp){
-            literal = new literals::NullLiteral();
+            literal = make_shared<literals::NullLiteral>();
             lexeme = "";
         }
 
         Token::Token(TokenType token_tp, const string& lexeme): token_type(token_tp), lexeme(lexeme){
-            literal = new literals::NullLiteral();
+            literal = make_shared<literals::NullLiteral>();
         }
 
         Token::Token(TokenType token_tp, const string& lexeme, LiteralType treat_as): token_type(token_tp), lexeme(lexeme){
             switch (treat_as){
                 case LiteralType::NUMBER:
-                    literal = new literals::NumberLiteral(lexeme);
+                    literal = make_shared<literals::NumberLiteral>(lexeme);
                     break;
                 case LiteralType::STRING:
-                    literal = new literals::StringLiteral(lexeme);
+                    literal = make_shared<literals::StringLiteral>(lexeme);
                     break;
                 default:
-                    literal = new literals::NullLiteral();
+                    literal = make_shared<literals::NullLiteral>();
             }
         }
 

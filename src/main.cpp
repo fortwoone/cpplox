@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
             ExprPtr expr = parse(file_contents);
             cout << expr->to_string() << endl;
         }
-        catch (lox::parser::parse_error& exc){
+        catch (lox::parse_error& exc){
             cerr << exc.what() << endl;
             return exc.get_return_code();
         }
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
         try{
             lox::interpreter::run(file_contents);
         }
-        catch (const parse_error& exc){
+        catch (const lox::parse_error& exc){
             cerr << exc.what() << endl;
             return exc.get_return_code();
         }

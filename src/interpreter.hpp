@@ -6,7 +6,9 @@
 #include "tokenizer.hpp"
 #include "parser.hpp"
 #include "env.hpp"
+#include "exceptions.hpp"
 #include "callable.hpp"
+#include "ast.hpp"
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -16,10 +18,9 @@
 namespace lox::interpreter{
     namespace builtins = lox::callable::builtins;
     using lox::env::Environment;
-    using lox::env::VarValue;
-    using lox::parser::parse_error;
+    using lox::callable::VarValue;
     using lox::parser::Parser;
-    using lox::parser::ast::VariableStatement;
+    using lox::ast::VariableStatement;
     using lox::parser::StmtPtr;
     using lox::tokenizer::token::Token;
     using lox::tokenizer::tokenize;
@@ -43,6 +44,10 @@ namespace lox::interpreter{
         public:
             explicit Interpreter(const string& file_contents);
             explicit Interpreter(const vector<StmtPtr>& statements);
+
+            [[nodiscard]] shared_ptr<Environment> get_globals() const{
+                return globals;
+            }
 
             void run();
     };

@@ -39,4 +39,14 @@ namespace lox::env{
         }
         vars[name] = std::move(value);
     }
+
+    namespace for_callable{
+        shared_ptr<Environment> get_func_env(const shared_ptr<Environment>& globals_env){
+            return make_shared<Environment>(globals_env);
+        }
+
+        void set_env_member(const shared_ptr<Environment>& func_env, const string& name, VarValue value){
+            func_env->set(name, value);
+        }
+    }
 }

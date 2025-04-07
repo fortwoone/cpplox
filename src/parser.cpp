@@ -6,431 +6,14 @@
 
 
 namespace lox::parser{
-#   define as_double get<double>
-#   define as_bool get<bool>
-#   define as_string get<string>
-
-    namespace ast{
-        bool is_truthy(EvalResult eval_result){  // Truth operator check.
-            if (holds_alternative<string>(eval_result)){
-                return as_string(eval_result) != "nil";
-            }
-            else if (holds_alternative<bool>(eval_result)){
-                return as_bool(eval_result);
-            }
-            return true;
-        }
-
-        // region AST constants
-        const unordered_map<TokenType, LiteralExprType> _TOKEN_TO_LITEXPRTP{
-            {TokenType::TRUE, LiteralExprType::TRUE},
-            {TokenType::FALSE, LiteralExprType::FALSE},
-            {TokenType::NIL, LiteralExprType::NIL},
-            {TokenType::STRING, LiteralExprType::STRING},
-            {TokenType::NUMBER, LiteralExprType::NUMBER},
-        };
-
-        const unordered_map<TokenType, Operator> _TOKEN_TO_OP{
-                {TokenType::PLUS, Operator::PLUS},
-                {TokenType::MINUS, Operator::MINUS},
-                {TokenType::STAR, Operator::STAR},
-                {TokenType::SLASH, Operator::SLASH},
-                {TokenType::BANG, Operator::BANG},
-                {TokenType::EQUAL_EQUAL, Operator::EQUALITY},
-                {TokenType::BANG_EQUAL, Operator::INEQUALITY},
-                {TokenType::LESS, Operator::LESS},
-                {TokenType::GREATER, Operator::GREATER},
-                {TokenType::LESS_EQUAL, Operator::LESS_EQUAL},
-                {TokenType::GREATER_EQUAL, Operator::GREATER_EQUAL},
-                {TokenType::AND, Operator::AND},
-                {TokenType::OR, Operator::OR}
-        };
-
-        const unordered_map<Operator, string> _OP_TO_SYM{
-                {Operator::PLUS, "+"},
-                {Operator::MINUS, "-"},
-                {Operator::STAR, "*"},
-                {Operator::SLASH, "/"},
-                {Operator::BANG, "!"},
-                {Operator::EQUALITY, "=="},
-                {Operator::INEQUALITY, "!="},
-                {Operator::LESS, "<"},
-                {Operator::GREATER, ">"},
-                {Operator::LESS_EQUAL, "<="},
-                {Operator::GREATER_EQUAL, ">="},
-                {Operator::AND, "and"},
-                {Operator::OR, "or"}
-        };
-        // endregion
-
-        // region LiteralExpr
-        string LiteralExpr::to_string() const{
-            switch (expr_type){
-                case LiteralExprType::TRUE:
-                    return "true";
-                case LiteralExprType::FALSE:
-                    return "false";
-                case LiteralExprType::NIL:
-                    return "nil";
-                default:
-                    return value;
-            }
-        }
-
-        EvalResult LiteralExpr::evaluate() const{
-            switch (expr_type){
-                case LiteralExprType::TRUE:
-                    return true;
-                case LiteralExprType::FALSE:
-                    return false;
-                case LiteralExprType::NIL:
-                    return "nil";
-                case LiteralExprType::NUMBER:
-                    return stod(value);
-                default:
-                    return value;
-            }
-        }
-        // endregion
-
-        // region AbstractBinaryExpr
-        string AbstractBinaryExpr::to_string() const{
-            return "(" + _OP_TO_SYM.at(op) + " " + left->to_string() + " " + right->to_string() + ")";
-        }
-        // endregion
-
-        // region BinaryExpr
-        EvalResult BinaryExpr::evaluate() const{
-            using enum Operator;
-            EvalResult left_result = left->evaluate(), right_result = right->evaluate();
-            bool two_numbers = holds_alternative<double>(left_result) && holds_alternative<double>(right_result);
-            bool two_bools = holds_alternative<bool>(left_result) && holds_alternative<bool>(right_result);
-            bool two_strings = holds_alternative<string>(left_result) && holds_alternative<string>(right_result);
-
-            switch (op){
-                case PLUS:
-                    if (two_numbers){
-                        return as_double(left_result) + as_double(right_result);
-                    }
-                    else if (two_strings){
-                        ostringstream concat_stream;
-                        concat_stream << as_string(left_result) << as_string(right_result);
-                        return concat_stream.str();
-                    }
-                    break;
-                case MINUS:
-                    if (two_numbers){
-                        return as_double(left_result) - as_double(right_result);
-                    }
-                    break;
-                case STAR:
-                    if (two_numbers){
-                        return as_double(left_result) * as_double(right_result);
-                    }
-                    break;
-                case SLASH:
-                    if (two_numbers){
-                        return as_double(left_result) / as_double(right_result);
-                    }
-                    break;
-                case LESS:
-                    if (two_numbers){
-                        return as_double(left_result) < as_double(right_result);
-                    }
-                    else{
-                        throw parse_error(70, "Unsupported operation.\0");
-                    }
-                case GREATER:
-                    if (two_numbers){
-                        return as_double(left_result) > as_double(right_result);
-                    }
-                    else{
-                        throw parse_error(70, "Unsupported operation.\0");
-                    }
-                case LESS_EQUAL:
-                    if (two_numbers){
-                        return as_double(left_result) <= as_double(right_result);
-                    }
-                    else{
-                        throw parse_error(70, "Unsupported operation.\0");
-                    }
-                case GREATER_EQUAL:
-                    if (two_numbers){
-                        return as_double(left_result) >= as_double(right_result);
-                    }
-                    else {
-                        throw parse_error(70, "Unsupported operation.\0");
-                    }
-                case EQUALITY:
-                    if (two_numbers){
-                        return as_double(left_result) == as_double(right_result);
-                    }
-                    else if (two_bools){
-                        return as_bool(left_result) == as_bool(right_result);
-                    }
-                    else if (two_strings){
-                        return as_string(left_result) == as_string(right_result);
-                    }
-                    return false;
-                case INEQUALITY:
-                    if (two_numbers){
-                        return as_double(left_result) != as_double(right_result);
-                    }
-                    else if (two_bools){
-                        return as_bool(left_result) != as_bool(right_result);
-                    }
-                    else if (two_strings){
-                        return as_string(left_result) != as_string(right_result);
-                    }
-                    return true;
-                default:
-                    throw parse_error(70, "Unsupported operation.\0");
-            }
-            throw parse_error(70, "Unsupported operation.\0");
-        }
-        // endregion
-
-        // region UnaryExpr
-        string UnaryExpr::to_string() const{
-            return "(" + _OP_TO_SYM.at(op) + " " + operand->to_string() + ")";
-        }
-
-        EvalResult UnaryExpr::evaluate() const{
-            EvalResult evaluated_operand = operand->evaluate();
-
-            if (holds_alternative<bool>(evaluated_operand)){
-                if (op == Operator::BANG){
-                    return !as_bool(evaluated_operand);
-                }
-            }
-            else if (holds_alternative<double>(evaluated_operand)){
-                switch (op){
-                    case Operator::MINUS:
-                        return -as_double(evaluated_operand);
-                    case Operator::BANG:
-                        return false;
-                    default:
-                        break;
-                }
-            }
-            else{
-                switch (op){
-                    case Operator::BANG:
-                        return as_string(evaluated_operand) == "nil";
-                    default:
-                        break;
-                }
-            }
-            throw parse_error(70, "Invalid operand for unary expression.\0");
-        }
-        // endregion
-
-        // region AbstractVarExpr
-        AbstractVarExpr::AbstractVarExpr(const string& name, const shared_ptr<Environment>& env)
-        : name(name), env(env){
-        }
-
-        void AbstractVarExpr::set_env(const shared_ptr<Environment>& new_env){
-            this->env = new_env;
-        }
-        // endregion
-
-        // region VariableExpr
-        // Using const references to shared pointers to make absolutely SURE memory doesn't get out of hand when
-        // handing a pointer to the environment object.
-        VariableExpr::VariableExpr(const Token& id_token, const shared_ptr<Environment>& env): AbstractVarExpr(id_token.get_lexeme(), env){
-            if (id_token.get_token_type() != TokenType::IDENTIFIER){
-                throw parse_error(65, "Invalid token type for variable expression.");
-            }
-        }
-
-        EvalResult VariableExpr::evaluate() const{
-            if (env == nullptr){
-                return name;
-            }
-            return env->get(name);
-        }
-        // endregion
-
-        // region AssignmentExpr
-        AssignmentExpr::AssignmentExpr(string name, shared_ptr<Expr> value, const shared_ptr<Environment>& env)
-        : AbstractVarExpr(std::move(name), env), value(std::move(value)){}
-
-        EvalResult AssignmentExpr::evaluate() const{
-            EvalResult val = value->evaluate();
-            env->assign(name, val);
-            return val;
-        }
-        // endregion
-
-        // region LogicalExpr
-        EvalResult LogicalExpr::evaluate() const{
-            EvalResult left_evaled = left->evaluate();
-
-            switch (op){
-                case Operator::OR:
-                    return (is_truthy(left_evaled) ? left_evaled : right->evaluate());
-                case Operator::AND:
-                    return (is_truthy(left_evaled) ? right->evaluate() : left_evaled);
-                default:
-                    unreachable();
-            }
-        }
-        // endregion
-
-        // region CallExpr
-        CallExpr::CallExpr(const shared_ptr<Expr>& callee, Token& paren, const vector<shared_ptr<Expr>>& args)
-        : callee(callee), paren(paren), args(args){}
-
-        string CallExpr::to_string() const{
-            auto ret = callee->to_string() + "(";
-
-            for (const auto& arg: args){
-                ret += arg->to_string();
-                if (arg != args.back()){
-                    ret += ", ";
-                }
-            }
-            ret += ")";
-
-            return ret;
-        };
-
-        EvalResult CallExpr::evaluate() const{
-            EvalResult callee_eval = callee->evaluate();
-
-            if (!is_callable(callee_eval)){
-                throw runtime_error("Given object is not callable.");
-            }
-
-            vector<EvalResult> args_evaled;
-            args_evaled.reserve(args.size());
-            for (const auto& arg: args){
-                args_evaled.push_back(arg->evaluate());
-            }
-
-
-            CallablePtr func = get<CallablePtr>(callee_eval);
-
-            if (args_evaled.size() != func->arity()){
-                throw runtime_error("Expected " + std::to_string(func->arity()) + " arguments, got " + std::to_string(args_evaled.size()));
-            }
-
-            return func->call(args_evaled);
-        }
-        // endregion
-
-        // region ExprStatement
-        void ExprStatement::execute() const{
-            EvalResult result = expr->evaluate();
-        }
-        // endregion
-
-        // region PrintStatement
-        void PrintStatement::execute() const{
-            EvalResult result = expr->evaluate();
-            if (holds_alternative<bool>(result)){
-                cout << (as_bool(result) ? "true" : "false") << endl;
-            }
-            else if (holds_alternative<double>(result)){
-                auto previous = cout.precision();
-                if (static_cast<int>(as_double(result)) == as_double(result)){
-                    cout << fixed << setprecision(0);
-                }
-                cout << as_double(result) << endl;
-                if (static_cast<int>(as_double(result)) == as_double(result)){
-                    cout << setprecision(previous);
-                    cout.unsetf(std::ios_base::fixed);
-                }
-            }
-            else{
-                cout << as_string(result) << endl;
-            }
-        }
-        // endregion
-
-        // region VariableStatement
-        VariableStatement::VariableStatement(const string& name, shared_ptr<Expr> init_expr): name(name), StatementWithExpr(init_expr){}  // NOLINT
-
-        void VariableStatement::execute() const{
-            // Does nothing. Only exists for RTTI purposes. The interpreter will be the actual one doing the variable setting.
-        }
-        // endregion
-
-        // region BlockStatement
-        BlockStatement::BlockStatement(vector<shared_ptr<Statement>> statements, const shared_ptr<Environment>& env)
-        : statements(std::move(statements)), env(env){}
-
-        void BlockStatement::exec_var_stmt(const shared_ptr<VariableStatement>& var_stmt) const{
-            EvalResult val = "nil";
-            if (var_stmt->get_initialiser() != nullptr){
-                val = var_stmt->get_initialiser()->evaluate();
-            }
-
-            env->set(var_stmt->get_name(), val);
-        }
-
-        void BlockStatement::execute() const{
-            for (const auto& stmt: statements){
-                auto as_swe_ptr = dynamic_pointer_cast<StatementWithExpr>(stmt);
-                if (as_swe_ptr != nullptr){
-                    auto as_var_expr = dynamic_pointer_cast<AbstractVarExpr>(as_swe_ptr->get_expr());
-                    if (as_var_expr != nullptr){
-                        // Set variable expressions' environment as the block one instead of the top-level one.
-                        as_var_expr->set_env(env);
-                    }
-                }
-                auto as_var_stmt = dynamic_pointer_cast<VariableStatement>(stmt);
-                if (as_var_stmt != nullptr){
-                    exec_var_stmt(as_var_stmt);
-                    continue;
-                }
-                stmt->execute();
-            }
-        }
-        // endregion
-
-        // region AbstractLogicalStmt
-        AbstractLogicalStmt::AbstractLogicalStmt(shared_ptr<Expr> condition, shared_ptr<Statement> success)
-        : condition(std::move(condition)), on_success(std::move(success)){}
-        // endregion
-
-        // region IfStatement
-        IfStatement::IfStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success, shared_ptr<Statement> failure)
-        : AbstractLogicalStmt(std::move(condition), std::move(success)), on_failure(std::move(failure)){}
-
-        IfStatement::IfStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success)
-        : AbstractLogicalStmt(std::move(condition), std::move(success)), on_failure(nullptr){}
-
-        void IfStatement::execute() const{
-            EvalResult condit_evaled = condition->evaluate();
-            if (is_truthy(condit_evaled)){
-                return on_success->execute();
-            }
-            if (on_failure != nullptr){
-                return on_failure->execute();
-            }
-        }
-        // endregion
-
-        // region WhileStatement
-        WhileStatement::WhileStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success)
-        : AbstractLogicalStmt(std::move(condition), std::move(success)){}
-
-        void WhileStatement::execute() const{
-            while (is_truthy(condition->evaluate())){
-                on_success->execute();
-            }
-        }
-        // endregion
-    }
-
     // region Parser
-    Parser::Parser(vector<Token> token_vec): tokens(std::move(token_vec)), env{nullptr}{}
+    Parser::Parser(vector<Token> token_vec): tokens(std::move(token_vec)), env{nullptr}, globals{nullptr}{}
 
     // Using const references to shared pointers to make absolutely SURE memory doesn't get out of hand when
     // handing a pointer to the environment object.
-    Parser::Parser(vector<Token> token_vec, const shared_ptr<Environment>& env): tokens(std::move(token_vec)), env(env){}
+    Parser::Parser(vector<Token> token_vec, const shared_ptr<Environment>& env): tokens(std::move(token_vec)), env(env){
+        globals = this->env;
+    }
 
     Token& Parser::advance(){
         if (!is_at_end()){
@@ -479,8 +62,8 @@ namespace lox::parser{
 
         if (match({NUMBER, STRING})){
             return make_shared<ast::LiteralExpr>(
-                    ast::_TOKEN_TO_LITEXPRTP.at(
-                            previous().get_token_type()
+                    get_litexpr_tp_from_token_type(
+                        previous().get_token_type()
                     ),
                     previous().get_literal_formatted_value()
             );
@@ -513,7 +96,8 @@ namespace lox::parser{
         return make_shared<ast::CallExpr>(
             callee,
             paren,
-            args
+            args,
+            globals
         );
     }
 
@@ -536,7 +120,7 @@ namespace lox::parser{
             Token& op = previous();
             ExprPtr operand = get_unary();
             return make_shared<ast::UnaryExpr>(
-                ast::_TOKEN_TO_OP.at(op.get_token_type()),
+                get_op_from_token(op.get_token_type()),
                 operand
             );
         }
@@ -553,7 +137,7 @@ namespace lox::parser{
             ExprPtr right = get_unary();
             expr = make_shared<ast::BinaryExpr>(
                     expr,
-                    ast::_TOKEN_TO_OP.at(oper.get_token_type()),
+                    get_op_from_token(oper.get_token_type()),
                     right
             );
         }
@@ -570,7 +154,7 @@ namespace lox::parser{
             ExprPtr right = get_factor();
             expr = make_shared<ast::BinaryExpr>(
                 expr,
-                ast::_TOKEN_TO_OP.at(op.get_token_type()),
+                get_op_from_token(op.get_token_type()),
                 right
             );
         }
@@ -588,7 +172,7 @@ namespace lox::parser{
                 ExprPtr right = get_term();
                 expr = make_shared<ast::BinaryExpr>(
                     expr,
-                    ast::_TOKEN_TO_OP.at(oper.get_token_type()),
+                    get_op_from_token(oper.get_token_type()),
                     right
                 );
             }
@@ -610,7 +194,7 @@ namespace lox::parser{
                 ExprPtr right = get_comparison();
                 expr = make_shared<ast::BinaryExpr>(
                     expr,
-                    ast::_TOKEN_TO_OP.at(oper.get_token_type()),
+                    get_op_from_token(oper.get_token_type()),
                     right
                 );
             }
@@ -631,7 +215,7 @@ namespace lox::parser{
             ExprPtr right = get_equality();
             expr = make_shared<ast::LogicalExpr>(
                 std::move(expr),
-                ast::_TOKEN_TO_OP.at(op.get_token_type()),
+                get_op_from_token(op.get_token_type()),
                 std::move(right)
             );
         }
@@ -647,7 +231,7 @@ namespace lox::parser{
             ExprPtr right = get_and();
             expr = make_shared<ast::LogicalExpr>(
                 std::move(expr),
-                ast::_TOKEN_TO_OP.at(op.get_token_type()),
+                get_op_from_token(op.get_token_type()),
                 std::move(right)
             );
         }
@@ -883,7 +467,41 @@ namespace lox::parser{
         );
     }
 
+    StmtPtr Parser::get_func_decl(bool is_method){  // NOLINT
+        using enum TokenType;
+        Token name = consume(IDENTIFIER, is_method ? "Expected method name." : "Expected function name.");
+        consume(LEFT_PAREN, is_method ? "Expected '(' after method name." : "Expected '(' after function name.");
+        vector<Token> args;
+        if (!check(RIGHT_PAREN)){
+            do{
+                if (args.size() >= 255){
+                    throw parse_error(65, is_method ? "Cannot have more than 255 parameters in method definition." : "Cannot have more than 255 parameters in function definition.");
+                }
+                args.push_back(
+                    consume(IDENTIFIER, "Expected parameter name.")
+                );
+            } while (match(COMMA));
+        }
+        consume(RIGHT_PAREN, "Expected ')' after parameter list.");
+
+        consume(
+            LEFT_BRACE,
+            is_method ? "Expected '{' before method body." : "Expected '{' before function body."
+        );
+
+        vector<StmtPtr> body = get_block_stmt();
+        return make_shared<ast::FunctionStmt>(
+            name,
+            args,
+            body,
+            globals
+        );
+    }
+
     StmtPtr Parser::get_declaration(){  // NOLINT
+        if (match(TokenType::FUN)){
+            return get_func_decl(false);
+        }
         if (match(TokenType::VAR)){
             return get_var_declaration();
         }
