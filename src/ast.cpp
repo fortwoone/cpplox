@@ -458,7 +458,7 @@ namespace lox::ast{
 
         string get_func_name(const shared_ptr<Statement>& func_stmt){
             auto as_func_stmt = dynamic_pointer_cast<FunctionStmt>(func_stmt);
-            if (as_func_stmt == nullptr) {
+            if (as_func_stmt != nullptr) {
                 return as_func_stmt->name;
             }
 
