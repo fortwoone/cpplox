@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <ctime>
 #include <memory>
+#include <string>
 #include "utils.hpp"
 #include "tokenizer.hpp"
 
@@ -24,12 +25,15 @@ namespace lox::ast{
     using lox::env::Environment;
     using lox::tokenizer::token::Token;
     using std::shared_ptr;
+    using std::string;
 
     class Statement;
 
     // Functions only used in callable context. Must not be used elsewhere.
     namespace for_callable {
         vector<shared_ptr<Statement>> get_func_body(const shared_ptr<Statement> &func_stmt);
+
+        string get_func_name(const shared_ptr<Statement>& func_stmt);
 
         vector<Token> get_args(const shared_ptr<Statement> &func_stmt);
 
@@ -49,6 +53,7 @@ namespace lox::callable {
     using lox::ast::for_callable::get_args;
     using lox::ast::for_callable::get_arg_count;
     using lox::ast::for_callable::get_func_body;
+    using lox::ast::for_callable::get_func_name;
     using lox::ast::for_callable::exec_stmt_list_as_block;
     using lox::env::Environment;
     using lox::env::for_callable::get_func_env;
@@ -57,6 +62,7 @@ namespace lox::callable {
 
     using std::make_shared;
     using std::shared_ptr;
+    using std::string;
     using std::time;
     using std::time_t;
 
@@ -71,6 +77,8 @@ namespace lox::callable {
     class AbstractLoxCallable {
     public:
         virtual ~AbstractLoxCallable() = default;
+
+        [[nodiscard]] virtual string to_string() const = 0;
 
         [[nodiscard]] virtual constexpr ubyte arity() const = 0;
 
@@ -104,7 +112,11 @@ namespace lox::callable{
         public:
             LoxFunction(const shared_ptr<ast::Statement>& decl);
 
-            constexpr ubyte arity() const final;
+            [[nodiscard]] string to_string() const{
+                return "<fn " + get_func_name(decl) + ">";
+            }
+
+            [[nodiscard]] constexpr ubyte arity() const final;
 
             [[nodiscard]] Value call(const shared_ptr<Environment>& globals, const vector<Value>& args) const final;
     };
@@ -112,6 +124,10 @@ namespace lox::callable{
     namespace builtins{
         class ClockFunc: public AbstractLoxCallable{
             public:
+                [[nodiscard]] string to_string() const final{
+                    return "<fn clock>";
+                }
+
                 [[nodiscard]] constexpr ubyte arity() const final{
                     return 0;
                 }

@@ -46,6 +46,7 @@ namespace lox::ast{
 #   define as_double get<double>
 #   define as_bool get<bool>
 #   define as_string get<string>
+#   define as_func get<CallablePtr>
 
     bool is_truthy(EvalResult eval_result);
 
@@ -317,6 +318,7 @@ namespace lox::ast{
 
         friend vector<shared_ptr<Statement>> for_callable::get_func_body(const shared_ptr<Statement> &func_stmt);
         friend vector<Token> for_callable::get_args(const shared_ptr<Statement> &func_stmt);
+        friend string for_callable::get_func_name(const shared_ptr<Statement>& func_stmt);
 
         public:
             FunctionStmt(const Token& id_token, const vector<Token>& args, const vector<shared_ptr<Statement>>& body, const shared_ptr<Environment>& globals);
@@ -330,13 +332,15 @@ namespace lox::ast{
 
     // Functions only used in callable context. Must not be used elsewhere.
     namespace for_callable{
-        vector<shared_ptr<Statement>> get_func_body(const shared_ptr<Statement> &func_stmt);
+        vector<shared_ptr<Statement>> get_func_body(const shared_ptr<Statement>& func_stmt);
 
-        vector<Token> get_args(const shared_ptr<Statement> &func_stmt);
+        string get_func_name(const shared_ptr<Statement>& func_stmt);
 
-        ubyte get_arg_count(const shared_ptr<Statement> &func_stmt);
+        vector<Token> get_args(const shared_ptr<Statement>& func_stmt);
 
-        void exec_stmt_list_as_block(const vector<shared_ptr<Statement>> &stmts, const shared_ptr<Environment> &env);
+        ubyte get_arg_count(const shared_ptr<Statement>& func_stmt);
+
+        void exec_stmt_list_as_block(const vector<shared_ptr<Statement>>& stmts, const shared_ptr<Environment>& env);
     }
 }
 

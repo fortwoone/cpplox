@@ -312,7 +312,7 @@ namespace lox::ast{
         }
 
 
-        CallablePtr func = get<CallablePtr>(callee_eval);
+        CallablePtr func = as_func(callee_eval);
 
         if (args_evaled.size() != func->arity()){
             throw runtime_error("Expected " + std::to_string(func->arity()) + " arguments, got " + std::to_string(args_evaled.size()));
@@ -344,6 +344,9 @@ namespace lox::ast{
                 cout << setprecision(previous);
                 cout.unsetf(std::ios_base::fixed);
             }
+        }
+        else if (holds_alternative<CallablePtr>(result)){
+            cout << as_func(result)->to_string() << endl;
         }
         else{
             cout << as_string(result) << endl;
@@ -392,7 +395,7 @@ namespace lox::ast{
     }
 
     namespace for_callable{
-        void exec_stmt_list_as_block(const vector<shared_ptr<Statement>> &stmts, const shared_ptr<Environment> &env) {
+        void exec_stmt_list_as_block(const vector<shared_ptr<Statement>>& stmts, const shared_ptr<Environment>& env) {
             shared_ptr<BlockStatement> as_block = make_shared<BlockStatement>(stmts, env);
             as_block->execute();
         }
@@ -453,7 +456,16 @@ namespace lox::ast{
             return {as_func_stmt->body};
         }
 
-        vector<Token> get_args(const shared_ptr<Statement> &func_stmt) {
+        string get_func_name(const shared_ptr<Statement>& func_stmt){
+            auto as_func_stmt = dynamic_pointer_cast<FunctionStmt>(func_stmt);
+            if (as_func_stmt == nullptr) {
+                return as_func_stmt->name;
+            }
+
+            return "";
+        }
+
+        vector<Token> get_args(const shared_ptr<Statement>& func_stmt) {
             vector<Token> ret;
             auto as_func_stmt = dynamic_pointer_cast<FunctionStmt>(func_stmt);
             if (as_func_stmt == nullptr) {
@@ -463,7 +475,7 @@ namespace lox::ast{
             return {as_func_stmt->args};
         }
 
-        ubyte get_arg_count(const shared_ptr<Statement> &func_stmt) {
+        ubyte get_arg_count(const shared_ptr<Statement>& func_stmt) {
             auto as_func_stmt = dynamic_pointer_cast<FunctionStmt>(func_stmt);
             if (as_func_stmt == nullptr) {
                 return 0;
