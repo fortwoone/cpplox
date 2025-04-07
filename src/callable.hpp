@@ -27,8 +27,6 @@ namespace lox::ast{
 
     // Functions only used in callable context. Must not be used elsewhere.
     namespace for_callable {
-        shared_ptr<Environment> get_func_env(const shared_ptr<Statement>& globals_env);
-
         string get_func_name(const shared_ptr<Statement>& func_stmt);
 
         vector<Token> get_args(const shared_ptr<Statement>& func_stmt);
@@ -38,7 +36,18 @@ namespace lox::ast{
 }
 
 namespace lox::interpreter{
+    using lox::env::Environment;
+    using std::shared_ptr;
+
     class Interpreter;
+
+    namespace for_ast{
+        shared_ptr<Environment> get_current_env(const shared_ptr<Interpreter>& interpreter);
+
+        void add_nesting_level(const shared_ptr<Interpreter>& interpreter);
+
+        void remove_nesting_level(const shared_ptr<Interpreter>& interpreter);
+    }
 }
 
 // Actual file declarations (part 1)
@@ -46,9 +55,11 @@ namespace lox::callable {
     using lox::ubyte;
     using lox::ast::for_callable::get_args;
     using lox::ast::for_callable::get_arg_count;
-    using lox::ast::for_callable::get_func_env;
     using lox::ast::for_callable::get_func_name;
     using lox::env::Environment;
+    using lox::interpreter::for_ast::get_current_env;
+    using lox::interpreter::for_ast::add_nesting_level;
+    using lox::interpreter::for_ast::remove_nesting_level;
     using lox::interpreter::Interpreter;
     using lox::tokenizer::token::Token;
 
@@ -74,15 +85,16 @@ namespace lox::callable {
 
         [[nodiscard]] virtual constexpr ubyte arity() const = 0;
 
-        [[nodiscard]] virtual Value call(const vector<Value> &args) const = 0;
+        [[nodiscard]] virtual Value call(const shared_ptr<Interpreter>& interpreter, const vector<Value> &args) const = 0;
     };
 
 }
 
 namespace lox::ast::for_callable{
     using lox::callable::EvalResult;
+    using lox::interpreter::Interpreter;
 
-    EvalResult exec_func_body(const shared_ptr<Statement>& func_stmt);
+    EvalResult exec_func_body(const shared_ptr<Interpreter>& interpreter, const shared_ptr<Statement>& func_stmt);
 }
 
 // Putting this here because we need VarValue from lox::callable for future accesses to the environment to work.
@@ -117,7 +129,7 @@ namespace lox::callable{
 
             [[nodiscard]] constexpr ubyte arity() const final;
 
-            [[nodiscard]] Value call(const vector<Value>& args) const final;
+            [[nodiscard]] Value call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args) const final;
     };
 
     namespace builtins{
@@ -130,7 +142,7 @@ namespace lox::callable{
                 [[nodiscard]] constexpr ubyte arity() const final{
                     return 0;
                 }
-                [[nodiscard]] Value call(const vector<Value>& args) const final;
+                [[nodiscard]] Value call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args) const final;
         };
     }
 }

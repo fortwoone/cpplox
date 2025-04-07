@@ -5,7 +5,6 @@
 #pragma once
 #include "tokenizer.hpp"
 #include "ast.hpp"
-#include "env.hpp"
 #include "exceptions.hpp"
 #include "callable.hpp"
 #include <algorithm>
@@ -30,7 +29,6 @@ namespace lox::parser{
     using lox::callable::is_boolean;
     using lox::callable::is_callable;
 
-    using lox::env::Environment;
     using lox::tokenizer::literals::NumberLiteral;
     using lox::tokenizer::token::Token;
     using lox::tokenizer::token::TokenType;
@@ -61,7 +59,6 @@ namespace lox::parser{
 
     class Parser{
         vector<Token> tokens;
-        shared_ptr<Environment> env, globals;
         size_t current_idx = 0;
 
         [[nodiscard]] Token& peek(){
@@ -135,7 +132,6 @@ namespace lox::parser{
 
         public:
             explicit Parser(vector<Token> token_vec);
-            Parser(vector<Token> token_vec, const shared_ptr<Environment>& env);
 
             ExprPtr parse_old();
             vector<StmtPtr> parse();

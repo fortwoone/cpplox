@@ -16,11 +16,30 @@
 #include <utility>
 #include <variant>
 
+namespace lox::interpreter{
+    using lox::env::Environment;
+    using std::shared_ptr;
+
+    class Interpreter;
+
+    namespace for_ast{
+        shared_ptr<Environment> get_current_env(const shared_ptr<Interpreter>& interpreter);
+
+        void add_nesting_level(const shared_ptr<Interpreter>& interpreter);
+
+        void remove_nesting_level(const shared_ptr<Interpreter>& interpreter);
+    }
+}
+
 namespace lox::ast{
     using lox::callable::CallablePtr;
     using lox::callable::LoxFunction;
     using lox::callable::EvalResult;
     using lox::env::Environment;
+    using lox::interpreter::Interpreter;
+    using lox::interpreter::for_ast::get_current_env;
+    using lox::interpreter::for_ast::add_nesting_level;
+    using lox::interpreter::for_ast::remove_nesting_level;
     using lox::tokenizer::token::Token;
     using lox::tokenizer::token::TokenType;
 
@@ -55,7 +74,7 @@ namespace lox::ast{
         public:
             virtual ~Expr() = default;
             [[nodiscard]] virtual string to_string() const = 0;
-            [[nodiscard]] virtual EvalResult evaluate() const = 0;
+            [[nodiscard]] virtual EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const = 0;
     };
 
 
@@ -80,7 +99,7 @@ namespace lox::ast{
             explicit LiteralExpr(LiteralExprType type, string value): expr_type(type), value(std::move(value)){}
 
             [[nodiscard]] string to_string() const final;
-            [[nodiscard]] EvalResult evaluate() const final;
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const final;
     };
 
     enum class Operator: ubyte{
@@ -112,7 +131,7 @@ namespace lox::ast{
 
             [[nodiscard]] string to_string() const final;
 
-            [[nodiscard]] EvalResult evaluate() const override = 0;
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const override = 0;
     };
 
     class BinaryExpr: public AbstractBinaryExpr{
@@ -120,7 +139,7 @@ namespace lox::ast{
             BinaryExpr(shared_ptr<Expr> left, Operator op, shared_ptr<Expr> right)
                     : AbstractBinaryExpr(std::move(left), op, std::move(right)){}
 
-            [[nodiscard]] EvalResult evaluate() const final;
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const final;
     };
 
     class GroupExpr: public Expr{
@@ -133,8 +152,8 @@ namespace lox::ast{
                 return "(group " + expr->to_string() + ")";
             }
 
-            [[nodiscard]] EvalResult evaluate() const final{
-                return expr->evaluate();
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const final{
+                return expr->evaluate(interpreter);
             }
     };
 
@@ -147,16 +166,15 @@ namespace lox::ast{
 
             [[nodiscard]] string to_string() const final;
 
-            [[nodiscard]] EvalResult evaluate() const final;
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const final;
     };
 
     class AbstractVarExpr: public Expr{
         protected:
             string name;
-            shared_ptr<Environment> env;
 
         public:
-            AbstractVarExpr(const string& name, const shared_ptr<Environment>& env);
+            AbstractVarExpr(const string& name): name(name){};
 
             [[nodiscard]] string get_name() const{
                 return name;
@@ -166,29 +184,27 @@ namespace lox::ast{
                 return name;
             };
 
-            [[nodiscard]] EvalResult evaluate() const override = 0;
-
-            void set_env(const shared_ptr<Environment>& env);
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const override = 0;
     };
 
     class VariableExpr: public AbstractVarExpr{
         public:
-            explicit VariableExpr(const Token& id_token, const shared_ptr<Environment>& new_env);
+            explicit VariableExpr(const Token& id_token);
 
-            [[nodiscard]] EvalResult evaluate() const final;
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const final;
     };
 
     class AssignmentExpr: public AbstractVarExpr{
         shared_ptr<Expr> value;
 
         public:
-            AssignmentExpr(string name, shared_ptr<Expr> value, const shared_ptr<Environment>& env);
+            AssignmentExpr(string name, shared_ptr<Expr> value);
 
             [[nodiscard]] shared_ptr<Expr> get_value() const{
                 return value;
             };
 
-            [[nodiscard]] EvalResult evaluate() const final;
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const final;
     };
 
     class LogicalExpr: public AbstractBinaryExpr{
@@ -200,7 +216,7 @@ namespace lox::ast{
                 }
             }
 
-            [[nodiscard]] EvalResult evaluate() const final;
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const final;
     };
 
     class CallExpr: public Expr{
@@ -213,7 +229,7 @@ namespace lox::ast{
 
             [[nodiscard]] string to_string() const final;
 
-            [[nodiscard]] EvalResult evaluate() const final;
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) const final;
     };
     // endregion
 
@@ -221,7 +237,7 @@ namespace lox::ast{
     class Statement: public enable_shared_from_this<Statement>{
         public:
             virtual ~Statement() = default;
-            virtual void execute() = 0;
+            virtual void execute(const shared_ptr<Interpreter>& interpreter) = 0;
     };
 
     class StatementWithExpr: public Statement{
@@ -234,7 +250,7 @@ namespace lox::ast{
                 return expr;
             }
 
-            void execute() override = 0;
+            void execute(const shared_ptr<Interpreter>& interpreter) override = 0;
     };
 
     class ExprStatement: public StatementWithExpr{
@@ -242,14 +258,14 @@ namespace lox::ast{
         public:
             explicit ExprStatement(shared_ptr<Expr> expr): StatementWithExpr(std::move(expr)){}
 
-            void execute() final;
+            void execute(const shared_ptr<Interpreter>& interpreter) final;
     };
 
     class PrintStatement: public StatementWithExpr{
         public:
             explicit PrintStatement(shared_ptr<Expr> expr): StatementWithExpr(std::move(expr)){}
 
-            void execute() final;
+            void execute(const shared_ptr<Interpreter>& interpreter) final;
     };
 
     class VariableStatement: public StatementWithExpr{
@@ -266,21 +282,16 @@ namespace lox::ast{
                 return expr;
             }
 
-            void execute() final;
+            void execute(const shared_ptr<Interpreter>& interpreter) final;
     };
 
     class BlockStatement: public Statement{
         vector<shared_ptr<Statement>> statements;
-        shared_ptr<Environment> env;
-
-        friend shared_ptr<Environment> for_callable::get_func_env(const shared_ptr<Statement>& func_stmt);
-
-        void exec_var_stmt(const shared_ptr<VariableStatement>& var_stmt) const;
 
         public:
-            explicit BlockStatement(vector<shared_ptr<Statement>> statements, const shared_ptr<Environment>& env);
+            explicit BlockStatement(vector<shared_ptr<Statement>> statements);
 
-            void execute() final;
+            void execute(const shared_ptr<Interpreter>& interpreter) final;
     };
 
     class AbstractLogicalStmt: public Statement{
@@ -291,7 +302,7 @@ namespace lox::ast{
         public:
             AbstractLogicalStmt(shared_ptr<Expr> condition, shared_ptr<Statement> success);
 
-            void execute() override = 0;
+            void execute(const shared_ptr<Interpreter>& interpreter) override = 0;
     };
 
     class IfStatement: public AbstractLogicalStmt{
@@ -301,49 +312,46 @@ namespace lox::ast{
             IfStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success, shared_ptr<Statement> failure);
             IfStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success);
 
-            void execute() final;
+            void execute(const shared_ptr<Interpreter>& interpreter) final;
     };
 
     class WhileStatement: public AbstractLogicalStmt{
         public:
             WhileStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success);
 
-            void execute() final;
+            void execute(const shared_ptr<Interpreter>& interpreter) final;
     };
 
     class FunctionStmt: public Statement{
         string name;
-        shared_ptr<Environment> globals_env;
         vector<Token> args;
-        shared_ptr<BlockStatement> body;
+        vector<shared_ptr<Statement>> body;
 
-        friend EvalResult for_callable::exec_func_body(const shared_ptr<Statement>& func_stmt);
-        friend shared_ptr<Environment> for_callable::get_func_env(const shared_ptr<Statement>& func_stmt);
+        friend EvalResult for_callable::exec_func_body(const shared_ptr<Interpreter>& interpreter, const shared_ptr<Statement>& func_stmt);
         friend vector<Token> for_callable::get_args(const shared_ptr<Statement>& func_stmt);
         friend string for_callable::get_func_name(const shared_ptr<Statement>& func_stmt);
 
         public:
-            FunctionStmt(const Token& id_token, const vector<Token>& args, const shared_ptr<BlockStatement>& body, const shared_ptr<Environment>& globals);
+            FunctionStmt(const Token& id_token, const vector<Token>& args, const vector<shared_ptr<Statement>>& body);
 
             [[nodiscard]] ubyte get_arg_count() const{
                 return static_cast<ubyte>(args.size());
             }
 
-            void execute() final;
+            void execute(const shared_ptr<Interpreter>& interpreter) final;
     };
 
     class ReturnStmt: public StatementWithExpr{
         public:
             explicit ReturnStmt(const shared_ptr<Expr>& expr): StatementWithExpr(expr){}
 
-            void execute() final;
+            void execute(const shared_ptr<Interpreter>& interpreter) final;
     };
 
     // Functions only used in callable context. Must not be used elsewhere.
     namespace for_callable{
-        shared_ptr<Environment> get_func_env(const shared_ptr<Statement>& func_stmt);
 
-        EvalResult exec_func_body(const shared_ptr<Statement>& func_stmt);
+        EvalResult exec_func_body(const shared_ptr<Interpreter>& interpreter, const shared_ptr<Statement>& func_stmt);
 
         string get_func_name(const shared_ptr<Statement>& func_stmt);
 

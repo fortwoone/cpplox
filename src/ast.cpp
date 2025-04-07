@@ -79,7 +79,7 @@ namespace lox::ast{
         }
     }
 
-    EvalResult LiteralExpr::evaluate() const{
+    EvalResult LiteralExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
         switch (expr_type){
             case LiteralExprType::TRUE:
                 return true;
@@ -102,9 +102,9 @@ namespace lox::ast{
     // endregion
 
     // region BinaryExpr
-    EvalResult BinaryExpr::evaluate() const{
+    EvalResult BinaryExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
         using enum Operator;
-        EvalResult left_result = left->evaluate(), right_result = right->evaluate();
+        EvalResult left_result = left->evaluate(interpreter), right_result = right->evaluate(interpreter);
         bool two_numbers = holds_alternative<double>(left_result) && holds_alternative<double>(right_result);
         bool two_bools = holds_alternative<bool>(left_result) && holds_alternative<bool>(right_result);
         bool two_strings = holds_alternative<string>(left_result) && holds_alternative<string>(right_result);
@@ -197,8 +197,8 @@ namespace lox::ast{
         return "(" + _OP_TO_SYM.at(op) + " " + operand->to_string() + ")";
     }
 
-    EvalResult UnaryExpr::evaluate() const{
-        EvalResult evaluated_operand = operand->evaluate();
+    EvalResult UnaryExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
+        EvalResult evaluated_operand = operand->evaluate(interpreter);
 
         if (holds_alternative<bool>(evaluated_operand)){
             if (op == Operator::BANG){
@@ -227,53 +227,41 @@ namespace lox::ast{
     }
     // endregion
 
-    // region AbstractVarExpr
-    AbstractVarExpr::AbstractVarExpr(const string& name, const shared_ptr<Environment>& env)
-            : name(name), env(env){
-    }
-
-    void AbstractVarExpr::set_env(const shared_ptr<Environment>& new_env){
-        this->env = new_env;
-    }
-    // endregion
 
     // region VariableExpr
     // Using const references to shared pointers to make absolutely SURE memory doesn't get out of hand when
     // handing a pointer to the environment object.
-    VariableExpr::VariableExpr(const Token& id_token, const shared_ptr<Environment>& env): AbstractVarExpr(id_token.get_lexeme(), env){
+    VariableExpr::VariableExpr(const Token& id_token): AbstractVarExpr(id_token.get_lexeme()){
         if (id_token.get_token_type() != TokenType::IDENTIFIER){
             throw parse_error(65, "Invalid token type for variable expression.");
         }
     }
 
-    EvalResult VariableExpr::evaluate() const{
-        if (env == nullptr){
-            return name;
-        }
-        return env->get(name);
+    EvalResult VariableExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
+        return get_current_env(interpreter)->get(name);
     }
     // endregion
 
     // region AssignmentExpr
-    AssignmentExpr::AssignmentExpr(string name, shared_ptr<Expr> value, const shared_ptr<Environment>& env)
-            : AbstractVarExpr(std::move(name), env), value(std::move(value)){}
+    AssignmentExpr::AssignmentExpr(string name, shared_ptr<Expr> value)
+            : AbstractVarExpr(std::move(name)), value(std::move(value)){}
 
-    EvalResult AssignmentExpr::evaluate() const{
-        EvalResult val = value->evaluate();
-        env->assign(name, val);
+    EvalResult AssignmentExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
+        EvalResult val = value->evaluate(interpreter);
+        get_current_env(interpreter)->assign(name, val);
         return val;
     }
     // endregion
 
     // region LogicalExpr
-    EvalResult LogicalExpr::evaluate() const{
-        EvalResult left_evaled = left->evaluate();
+    EvalResult LogicalExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
+        EvalResult left_evaled = left->evaluate(interpreter);
 
         switch (op){
             case Operator::OR:
-                return (is_truthy(left_evaled) ? left_evaled : right->evaluate());
+                return (is_truthy(left_evaled) ? left_evaled : right->evaluate(interpreter));
             case Operator::AND:
-                return (is_truthy(left_evaled) ? right->evaluate() : left_evaled);
+                return (is_truthy(left_evaled) ? right->evaluate(interpreter) : left_evaled);
             default:
                 unreachable();
         }
@@ -298,8 +286,8 @@ namespace lox::ast{
         return ret;
     };
 
-    EvalResult CallExpr::evaluate() const{
-        EvalResult callee_eval = callee->evaluate();
+    EvalResult CallExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
+        EvalResult callee_eval = callee->evaluate(interpreter);
 
         if (!is_callable(callee_eval)){
             throw runtime_error("Given object is not callable.");
@@ -308,7 +296,7 @@ namespace lox::ast{
         vector<EvalResult> args_evaled;
         args_evaled.reserve(args.size());
         for (const auto& arg: args){
-            args_evaled.push_back(arg->evaluate());
+            args_evaled.push_back(arg->evaluate(interpreter));
         }
 
 
@@ -318,19 +306,19 @@ namespace lox::ast{
             throw runtime_error("Expected " + std::to_string(func->arity()) + " arguments, got " + std::to_string(args_evaled.size()));
         }
 
-        return func->call(args_evaled);
+        return func->call(interpreter, args_evaled);
     }
     // endregion
 
     // region ExprStatement
-    void ExprStatement::execute(){
-        EvalResult result = expr->evaluate();
+    void ExprStatement::execute(const shared_ptr<Interpreter>& interpreter){
+        EvalResult result = expr->evaluate(interpreter);
     }
     // endregion
 
     // region PrintStatement
-    void PrintStatement::execute(){
-        EvalResult result = expr->evaluate();
+    void PrintStatement::execute(const shared_ptr<Interpreter>& interpreter){
+        EvalResult result = expr->evaluate(interpreter);
         if (holds_alternative<bool>(result)){
             cout << (as_bool(result) ? "true" : "false") << endl;
         }
@@ -357,40 +345,23 @@ namespace lox::ast{
     // region VariableStatement
     VariableStatement::VariableStatement(const string& name, shared_ptr<Expr> init_expr): name(name), StatementWithExpr(init_expr){}  // NOLINT
 
-    void VariableStatement::execute(){
-        // Does nothing. Only exists for RTTI purposes. The interpreter will be the actual one doing the variable setting.
+    void VariableStatement::execute(const shared_ptr<Interpreter>& interpreter){
+        EvalResult val = "nil";
+        if (expr != nullptr){
+            val = expr->evaluate(interpreter);
+        }
+
+        get_current_env(interpreter)->set(name, val);
     }
     // endregion
 
     // region BlockStatement
-    BlockStatement::BlockStatement(vector<shared_ptr<Statement>> statements, const shared_ptr<Environment>& env)
-            : statements(std::move(statements)), env(env){}
+    BlockStatement::BlockStatement(vector<shared_ptr<Statement>> statements)
+            : statements(std::move(statements)){}
 
-    void BlockStatement::exec_var_stmt(const shared_ptr<VariableStatement>& var_stmt) const{
-        EvalResult val = "nil";
-        if (var_stmt->get_initialiser() != nullptr){
-            val = var_stmt->get_initialiser()->evaluate();
-        }
-
-        env->set(var_stmt->get_name(), val);
-    }
-
-    void BlockStatement::execute(){
+    void BlockStatement::execute(const shared_ptr<Interpreter>& interpreter){
         for (const auto& stmt: statements){
-            auto as_swe_ptr = dynamic_pointer_cast<StatementWithExpr>(stmt);
-            if (as_swe_ptr != nullptr){
-                auto as_var_expr = dynamic_pointer_cast<AbstractVarExpr>(as_swe_ptr->get_expr());
-                if (as_var_expr != nullptr){
-                    // Set variable expressions' environment as the block one instead of the top-level one.
-                    as_var_expr->set_env(env);
-                }
-            }
-            auto as_var_stmt = dynamic_pointer_cast<VariableStatement>(stmt);
-            if (as_var_stmt != nullptr){
-                exec_var_stmt(as_var_stmt);
-                continue;
-            }
-            stmt->execute();
+            stmt->execute(interpreter);
         }
     }
     // endregion
@@ -407,13 +378,13 @@ namespace lox::ast{
     IfStatement::IfStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success)
             : AbstractLogicalStmt(std::move(condition), std::move(success)), on_failure(nullptr){}
 
-    void IfStatement::execute(){
-        EvalResult condit_evaled = condition->evaluate();
+    void IfStatement::execute(const shared_ptr<Interpreter>& interpreter){
+        EvalResult condit_evaled = condition->evaluate(interpreter);
         if (is_truthy(condit_evaled)){
-            return on_success->execute();
+            return on_success->execute(interpreter);
         }
         if (on_failure != nullptr){
-            return on_failure->execute();
+            return on_failure->execute(interpreter);
         }
     }
     // endregion
@@ -422,58 +393,41 @@ namespace lox::ast{
     WhileStatement::WhileStatement(shared_ptr<Expr> condition, shared_ptr<Statement> success)
             : AbstractLogicalStmt(std::move(condition), std::move(success)){}
 
-    void WhileStatement::execute(){
-        while (is_truthy(condition->evaluate())){
-            on_success->execute();
+    void WhileStatement::execute(const shared_ptr<Interpreter>& interpreter){
+        while (is_truthy(condition->evaluate(interpreter))){
+            on_success->execute(interpreter);
         }
     }
     // endregion
 
     // region FunctionStmt
-    FunctionStmt::FunctionStmt(const Token& id_token, const vector<Token>& args, const shared_ptr<BlockStatement>& body, const shared_ptr<Environment>& globals)
-    : args(args), body(body), globals_env(globals){
+    FunctionStmt::FunctionStmt(const Token& id_token, const vector<Token>& args, const vector<shared_ptr<Statement>>& body)
+    : args(args), body(body){
         name = id_token.get_lexeme();
         if (args.size() >= 255){
             throw invalid_argument("Cannot have 255 parameters or more in a function.");
         }
     }
 
-    void FunctionStmt::execute(){
+    void FunctionStmt::execute(const shared_ptr<Interpreter>& interpreter){
         shared_ptr<Statement> shared = shared_from_this();
-        globals_env->set(
-                name,
-                make_shared<LoxFunction>(shared)
+        get_current_env(interpreter)->set(
+            name,
+            make_shared<LoxFunction>(shared)
         );
     }
 
     namespace for_callable{
-        shared_ptr<Environment> get_func_env(const shared_ptr<Statement>& func_stmt){
+        EvalResult exec_func_body(const shared_ptr<Interpreter>& interpreter, const shared_ptr<Statement>& func_stmt){
             auto as_func_stmt = dynamic_pointer_cast<FunctionStmt>(func_stmt);
             if (as_func_stmt == nullptr){
-                return nullptr;
-            }
-
-            auto as_block_body = dynamic_pointer_cast<BlockStatement>(as_func_stmt->body);
-            if (as_block_body == nullptr){
-                return nullptr;
-            }
-
-            return as_block_body->env;
-        }
-
-        EvalResult exec_func_body(const shared_ptr<Statement>& func_stmt){
-            auto as_func_stmt = dynamic_pointer_cast<FunctionStmt>(func_stmt);
-            if (as_func_stmt == nullptr){
-                return "nil";
-            }
-
-            auto as_block_body = dynamic_pointer_cast<BlockStatement>(as_func_stmt->body);
-            if (as_block_body == nullptr){
                 return "nil";
             }
 
             try {
-                as_block_body->execute();
+                for (const auto& stmt: as_func_stmt->body){
+                    stmt->execute(interpreter);
+                }
                 return "nil";
             }
             catch (const return_exc& returned_exc){
@@ -511,11 +465,11 @@ namespace lox::ast{
     // endregion
 
     // region ReturnStmt
-    void ReturnStmt::execute(){
+    void ReturnStmt::execute(const shared_ptr<Interpreter>& interpreter){
         if (expr == nullptr){
             throw return_exc("nil");
         }
-        throw return_exc(expr->evaluate());
+        throw return_exc(expr->evaluate(interpreter));
     }
     // endregion
 }

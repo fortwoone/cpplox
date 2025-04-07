@@ -27,19 +27,23 @@ namespace lox::callable{
         return get_arg_count(decl);
     }
 
-    Value LoxFunction::call(const vector<Value>& args) const{
-        shared_ptr<Environment> func_env = get_func_env(decl);
+    Value LoxFunction::call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args) const{
+        add_nesting_level(interpreter);
+        shared_ptr<Environment> func_env = get_current_env(interpreter);
         vector<Token> decl_args = get_args(decl);
 
         for (ubyte i = 0; i < get_arg_count(decl); ++i){
             set_env_member(func_env, decl_args.at(i).get_lexeme(), args.at(i));
         }
 
-        return exec_func_body(decl);
+        Value ret_val = exec_func_body(interpreter, decl);
+        remove_nesting_level(interpreter);
+
+        return ret_val;
     }
 
     namespace builtins{
-        Value ClockFunc::call(const vector<Value> &args) const {
+        Value ClockFunc::call(const shared_ptr<Interpreter>& interpreter, const vector<Value> &args) const {
             return (double)time(nullptr);
         }
     }

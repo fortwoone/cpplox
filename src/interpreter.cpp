@@ -15,7 +15,7 @@ namespace lox::interpreter{
         define_builtins();
         bool contains_errors = false;
 
-        Parser parser = Parser(tokenize(file_contents, &contains_errors), env);
+        Parser parser = Parser(tokenize(file_contents, &contains_errors));
         statements = parser.parse();
     }
 
@@ -25,28 +25,29 @@ namespace lox::interpreter{
         define_builtins();
     }
 
-    void Interpreter::execute_var_statement(const shared_ptr<VariableStatement>& var_stmt){
-        VarValue val = "nil";
-        if (var_stmt->get_initialiser() != nullptr){
-            val = var_stmt->get_initialiser()->evaluate();
-        }
-
-        env->set(var_stmt->get_name(), val);
-    }
-
     void Interpreter::run(){
+        shared_ptr<Interpreter> shared = shared_from_this();
         for (const auto& stmt: statements){
-            auto as_var_stmt = dynamic_pointer_cast<VariableStatement>(stmt);
-            if (as_var_stmt != nullptr){
-                execute_var_statement(as_var_stmt);
-                continue;
-            }
-            stmt->execute();
+            stmt->execute(shared);
         }
     }
 
     void run(const string& file_contents){
-        auto interpreter = Interpreter(file_contents);
-        interpreter.run();
+        shared_ptr<Interpreter> interpreter = make_shared<Interpreter>(file_contents);
+        interpreter->run();
+    }
+
+    namespace for_ast{
+        shared_ptr<Environment> get_current_env(const shared_ptr<Interpreter>& interpreter){
+            return interpreter->get_current_env();
+        }
+
+        void add_nesting_level(const shared_ptr<Interpreter>& interpreter){
+            interpreter->add_nesting_level();
+        }
+
+        void remove_nesting_level(const shared_ptr<Interpreter>& interpreter){
+            interpreter->remove_nesting_level();
+        }
     }
 }

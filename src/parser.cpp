@@ -7,13 +7,7 @@
 
 namespace lox::parser{
     // region Parser
-    Parser::Parser(vector<Token> token_vec): tokens(std::move(token_vec)), env{nullptr}, globals{nullptr}{}
-
-    // Using const references to shared pointers to make absolutely SURE memory doesn't get out of hand when
-    // handing a pointer to the environment object.
-    Parser::Parser(vector<Token> token_vec, const shared_ptr<Environment>& env): tokens(std::move(token_vec)), env(env){
-        globals = this->env;
-    }
+    Parser::Parser(vector<Token> token_vec): tokens(std::move(token_vec)){}
 
     Token& Parser::advance(){
         if (!is_at_end()){
@@ -57,7 +51,7 @@ namespace lox::parser{
         }
 
         if (match(IDENTIFIER)){
-            return make_shared<ast::VariableExpr>(previous(), env);
+            return make_shared<ast::VariableExpr>(previous());
         }
 
         if (match({NUMBER, STRING})){
@@ -250,8 +244,7 @@ namespace lox::parser{
             if (as_var_expr != nullptr){
                 return make_shared<ast::AssignmentExpr>(
                     as_var_expr->get_name(),
-                    value,
-                    env
+                    value
                 );
             }
 
@@ -361,14 +354,9 @@ namespace lox::parser{
             initialiser = nullptr;
         }
         else if (match(VAR)){
-            // If there actually is an initialiser, we need one nesting level.
-            // Doing it now so the next statements use the correct environment to look variables up into.
-            env = make_shared<Environment>(env);
             initialiser = get_var_declaration();
         }
         else{
-            // Same as comment above.
-            env = make_shared<Environment>(env);
             initialiser = get_expr_statement();
         }
 
@@ -378,10 +366,7 @@ namespace lox::parser{
         consume(SEMICOLON, "Expected ';' after loop condition.");
 
         if (!check(RIGHT_PAREN)){
-            // We also need an additional nested environment if there is an incrementer. In that case,
-            // we need it to be one level deeper, due to the block statement (incrementer) being contained into
-            // another block statement (the one with the body and initialiser).
-            env = make_shared<Environment>(env);
+
             increment = get_expr();
         }
         consume(RIGHT_PAREN, "Expected ')' after for clauses.");
@@ -396,8 +381,7 @@ namespace lox::parser{
             as_block.push_back(
                 make_shared<ast::ExprStatement>(increment)
             );
-            body = make_shared<ast::BlockStatement>(as_block, env);
-            env = env->get_enclosing();
+            body = make_shared<ast::BlockStatement>(as_block);
         }
 
         if (condition == nullptr){
@@ -416,12 +400,7 @@ namespace lox::parser{
             as_init_block.reserve(2);
             as_init_block.push_back(initialiser);
             as_init_block.push_back(body);
-            body = make_shared<ast::BlockStatement>(as_init_block, env);
-            env = env->get_enclosing();
-        }
-
-        while (env->get_enclosing() != nullptr){
-            env = env->get_enclosing();
+            body = make_shared<ast::BlockStatement>(as_init_block);
         }
 
         return body;
@@ -446,20 +425,14 @@ namespace lox::parser{
         }
         if (match(LEFT_BRACE)){
             try{
-                env = make_shared<Environment>(env);
-                auto ret = make_shared<ast::BlockStatement>(
-                    get_block_stmt(),
-                    env
+                return make_shared<ast::BlockStatement>(
+                    get_block_stmt()
                 );
-                env = env->get_enclosing();
-                return ret;
             }
             catch (const invalid_argument& exc){
-                env = env->get_enclosing();
                 throw exc;
             }
             catch (const parse_error& exc){
-                env = env->get_enclosing();
                 throw exc;
             }
         }
@@ -503,19 +476,12 @@ namespace lox::parser{
             is_method ? "Expected '{' before method body." : "Expected '{' before function body."
         );
 
-        env = make_shared<Environment>(env);
-        shared_ptr<ast::BlockStatement> body = make_shared<ast::BlockStatement>(
-            get_block_stmt(),
-            env
-        );
         auto ret = make_shared<ast::FunctionStmt>(
             name,
             args,
-            body,
-            globals
+            get_block_stmt()
         );
 
-        env = env->get_enclosing();
         return ret;
     }
 
@@ -542,7 +508,7 @@ namespace lox::parser{
     ubyte Parser::evaluate(){
         try{
             ExprPtr expr = parse_old();
-            auto result = expr->evaluate();
+            auto result = expr->evaluate(nullptr);
             if (holds_alternative<double>(result)){
                 cout << as_double(result) << endl;
             }
