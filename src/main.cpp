@@ -5,6 +5,7 @@
 #include "tokenizer.hpp"
 #include "parser.hpp"
 #include "interpreter.hpp"
+#include "runner.hpp"
 
 // region Using directives
 using std::cout;
@@ -72,7 +73,7 @@ int main(int argc, char *argv[]) {
     else if (command == "run"){
         string file_contents = read_file_contents(argv[2]);
         try{
-            lox::interpreter::run(file_contents);
+            lox::runner::run(file_contents);
         }
         catch (const lox::parse_error& exc){
             cerr << exc.what() << endl;

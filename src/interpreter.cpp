@@ -5,6 +5,27 @@
 #include "interpreter.hpp"
 
 namespace lox::interpreter{
+    VarValue Interpreter::look_up_variable(const string& name, const ExprPtr& expr){
+        if (locals.contains(expr)){
+            return env->get_at(locals.at(expr), name);
+        }
+        return globals->get(name);
+    }
+
+    void Interpreter::assign_var(const string& name, const ExprPtr& expr){
+        VarValue val = expr->evaluate(shared_from_this());
+        if (locals.contains(expr)){
+            env->assign_at(
+                locals.at(expr),
+                name,
+                val
+            );
+        }
+        else{
+            globals->assign(name, val);
+        }
+    }
+
     void Interpreter::define_builtins(){
         globals->set("clock", make_shared<builtins::ClockFunc>());
     }
@@ -38,6 +59,14 @@ namespace lox::interpreter{
     }
 
     namespace for_ast{
+        VarValue look_up_var(const shared_ptr<Interpreter>& interpreter, const string& name, const shared_ptr<ast::Expr>& expr){
+            return interpreter->look_up_variable(name, expr);
+        }
+
+        void assign_var(const shared_ptr<Interpreter>& interpreter, const string& name, const ExprPtr& expr){
+            interpreter->assign_var(name, expr);
+        }
+
         shared_ptr<Environment> get_current_env(const shared_ptr<Interpreter>& interpreter){
             return interpreter->get_current_env();
         }

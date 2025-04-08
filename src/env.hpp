@@ -40,6 +40,12 @@ namespace lox::env{
 
             void assign(const string& name, VarValue val);
 
+            [[nodiscard]] shared_ptr<Environment> get_ancestor(size_t distance);
+
+            [[nodiscard]] VarValue get_at(size_t distance, const string& name);
+
+            void assign_at(size_t distance, const string& name, VarValue val);
+
             [[nodiscard]] shared_ptr<Environment> get_nested_env(){
                 return make_shared<Environment>(shared_from_this());
             }

@@ -30,6 +30,18 @@ namespace lox::env{
         vars.insert_or_assign(name, value);
     }
 
+    shared_ptr<Environment> Environment::get_ancestor(size_t distance){
+        auto ret = shared_from_this();
+        for (size_t i = 0; i < distance; ++i){
+            ret = ret->get_enclosing();
+        }
+        return ret;
+    }
+
+    VarValue Environment::get_at(size_t distance, const string& name){
+        return get_ancestor(distance)->get(name);
+    }
+
     void Environment::assign(const string& name, VarValue value){  // NOLINT
         if (!vars.contains(name)){
             if (enclosing != nullptr){
@@ -38,6 +50,10 @@ namespace lox::env{
             throw runtime_error("Undefined variable '" + name + "'");
         }
         vars[name] = std::move(value);
+    }
+
+    void Environment::assign_at(size_t distance, const string& name, VarValue val){
+        get_ancestor(distance)->assign(name, val);
     }
 
     namespace for_callable{

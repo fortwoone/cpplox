@@ -38,4 +38,15 @@ namespace lox{
                 return ret_val;
             }
     };
+
+    class resolve_error: public exception{
+        const char* message;
+
+        public:
+            resolve_error(const char* msg): message(msg){}
+
+            [[nodiscard]] const char* what() const noexcept override{
+                return message;
+            }
+    };
 }

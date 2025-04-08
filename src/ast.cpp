@@ -79,7 +79,7 @@ namespace lox::ast{
         }
     }
 
-    EvalResult LiteralExpr::evaluate(const shared_ptr<Environment>& env) const{
+    EvalResult LiteralExpr::evaluate(const shared_ptr<Environment>& env){
         switch (expr_type){
             case LiteralExprType::TRUE:
                 return true;
@@ -94,7 +94,7 @@ namespace lox::ast{
         }
     }
 
-    EvalResult LiteralExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
+    EvalResult LiteralExpr::evaluate(const shared_ptr<Interpreter>& interpreter){
         return evaluate(get_current_env(interpreter));
     }
     // endregion
@@ -106,7 +106,7 @@ namespace lox::ast{
     // endregion
 
     // region BinaryExpr
-    EvalResult BinaryExpr::evaluate(const shared_ptr<Environment>& env) const{
+    EvalResult BinaryExpr::evaluate(const shared_ptr<Environment>& env){
         using enum Operator;
         EvalResult left_result = left->evaluate(env), right_result = right->evaluate(env);
         bool two_numbers = holds_alternative<double>(left_result) && holds_alternative<double>(right_result);
@@ -195,7 +195,7 @@ namespace lox::ast{
         throw parse_error(70, "Unsupported operation.\0");
     }
 
-    EvalResult BinaryExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
+    EvalResult BinaryExpr::evaluate(const shared_ptr<Interpreter>& interpreter){
         using enum Operator;
         EvalResult left_result = left->evaluate(interpreter), right_result = right->evaluate(interpreter);
         bool two_numbers = holds_alternative<double>(left_result) && holds_alternative<double>(right_result);
@@ -290,7 +290,7 @@ namespace lox::ast{
         return "(" + _OP_TO_SYM.at(op) + " " + operand->to_string() + ")";
     }
 
-    EvalResult UnaryExpr::evaluate(const shared_ptr<Environment>& env) const{
+    EvalResult UnaryExpr::evaluate(const shared_ptr<Environment>& env){
         EvalResult evaluated_operand = operand->evaluate(env);
 
         if (holds_alternative<bool>(evaluated_operand)){
@@ -319,7 +319,7 @@ namespace lox::ast{
         throw parse_error(70, "Invalid operand for unary expression.\0");
     }
 
-    EvalResult UnaryExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
+    EvalResult UnaryExpr::evaluate(const shared_ptr<Interpreter>& interpreter){
         EvalResult evaluated_operand = operand->evaluate(interpreter);
 
         if (holds_alternative<bool>(evaluated_operand)){
@@ -359,12 +359,12 @@ namespace lox::ast{
         }
     }
 
-    EvalResult VariableExpr::evaluate(const shared_ptr<Environment>& env) const{
+    EvalResult VariableExpr::evaluate(const shared_ptr<Environment>& env){
         return env->get(name);
     }
 
-    EvalResult VariableExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
-        return evaluate(get_current_env(interpreter));
+    EvalResult VariableExpr::evaluate(const shared_ptr<Interpreter>& interpreter){
+        return look_up_var(interpreter, name, shared_from_this());
     }
     // endregion
 
@@ -372,21 +372,20 @@ namespace lox::ast{
     AssignmentExpr::AssignmentExpr(string name, shared_ptr<Expr> value)
             : AbstractVarExpr(std::move(name)), value(std::move(value)){}
 
-    EvalResult AssignmentExpr::evaluate(const shared_ptr<Environment>& env) const{
+    EvalResult AssignmentExpr::evaluate(const shared_ptr<Environment>& env){
         EvalResult val = value->evaluate(env);
         env->assign(name, val);
         return val;
     }
 
-    EvalResult AssignmentExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
-        EvalResult val = value->evaluate(interpreter);
-        get_current_env(interpreter)->assign(name, val);
-        return val;
+    EvalResult AssignmentExpr::evaluate(const shared_ptr<Interpreter>& interpreter){
+        assign_var(interpreter, name, value);
+        return value->evaluate(interpreter);
     }
     // endregion
 
     // region LogicalExpr
-    EvalResult LogicalExpr::evaluate(const shared_ptr<Environment>& env) const{
+    EvalResult LogicalExpr::evaluate(const shared_ptr<Environment>& env){
         EvalResult left_evaled = left->evaluate(env);
 
         switch (op){
@@ -399,7 +398,7 @@ namespace lox::ast{
         }
     }
 
-    EvalResult LogicalExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
+    EvalResult LogicalExpr::evaluate(const shared_ptr<Interpreter>& interpreter){
         EvalResult left_evaled = left->evaluate(interpreter);
 
         switch (op){
@@ -431,7 +430,7 @@ namespace lox::ast{
         return ret;
     };
 
-    EvalResult CallExpr::evaluate(const shared_ptr<Environment>& env) const{
+    EvalResult CallExpr::evaluate(const shared_ptr<Environment>& env){
         EvalResult callee_eval = callee->evaluate(env);
 
         if (!is_callable(callee_eval)){
@@ -454,7 +453,7 @@ namespace lox::ast{
         return func->call(env, args_evaled);
     }
 
-    EvalResult CallExpr::evaluate(const shared_ptr<Interpreter>& interpreter) const{
+    EvalResult CallExpr::evaluate(const shared_ptr<Interpreter>& interpreter){
         EvalResult callee_eval = callee->evaluate(interpreter);
 
         if (!is_callable(callee_eval)){
