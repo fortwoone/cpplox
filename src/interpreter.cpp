@@ -30,7 +30,7 @@ namespace lox::interpreter{
         globals->set("clock", make_shared<builtins::ClockFunc>());
     }
 
-    Interpreter::Interpreter(const string& file_contents): previous(nullptr){
+    Interpreter::Interpreter(const string& file_contents){
         env = make_shared<Environment>();
         globals = env;
         define_builtins();
@@ -40,7 +40,7 @@ namespace lox::interpreter{
         statements = parser.parse();
     }
 
-    Interpreter::Interpreter(const vector<StmtPtr>& statements): statements(statements), previous(nullptr){
+    Interpreter::Interpreter(const vector<StmtPtr>& statements): statements(statements){
         env = make_shared<Environment>();
         globals = env;
         define_builtins();
