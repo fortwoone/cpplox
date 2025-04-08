@@ -9,7 +9,7 @@ namespace lox::interpreter{
         if (locals.contains(expr)){
             return env->get_at(locals.at(expr), name);
         }
-        return globals->get(name);
+        return env->get(name);
     }
 
     void Interpreter::assign_var(const string& name, const ExprPtr& expr){
