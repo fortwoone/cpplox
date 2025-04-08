@@ -33,9 +33,9 @@ namespace lox::resolver{
     }
 
     void Resolver::resolve_local(const shared_ptr<ast::Expr>& expr, const string& name){
-        for (size_t i = scope_stack.size(); i > 0; --i){
-            if (scope_stack.at(i - 1).contains(name)){
-                return interpreter->resolve(expr, scope_stack.size() - 2 - i);
+        for (ssize_t i = scope_stack.size() - 1; i >= 0; --i){
+            if (scope_stack.at(i).contains(name)){
+                return interpreter->resolve(expr, scope_stack.size() - 1 - i);
             }
         }
     }
@@ -60,8 +60,9 @@ namespace lox::resolver{
     }
 
     void Resolver::resolve_var_expr(const shared_ptr<ast::VariableExpr>& var_expr){
-        if (!scope_stack.empty() && !scope_stack.back().at(var_expr->get_name())){
-            throw resolve_error("Can't read local variable in its own initialiser.\0");
+        if (!scope_stack.empty()){
+            if (scope_stack.back().contains(var_expr->get_name()) && !scope_stack.back().at(var_expr->get_name()))
+                throw resolve_error("Can't read local variable in its own initialiser.\0");
         }
 
         resolve_local(var_expr, var_expr->get_name());

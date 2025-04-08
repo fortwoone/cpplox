@@ -37,8 +37,7 @@ namespace lox::interpreter{
 
     class Interpreter: public enable_shared_from_this<Interpreter>{
         vector<StmtPtr> statements;
-        shared_ptr<Environment> globals;
-        shared_ptr<Environment> env;
+        shared_ptr<Environment> globals, env, previous;
         unordered_map<ExprPtr, size_t> locals;
 
         friend VarValue for_ast::look_up_var(const shared_ptr<Interpreter>& interpreter, const string& name, const shared_ptr<ast::Expr>& expr);
@@ -58,6 +57,16 @@ namespace lox::interpreter{
 
             [[nodiscard]] shared_ptr<Environment> get_current_env() const{
                 return env;
+            }
+
+            void set_current_env(const shared_ptr<Environment>& new_env){
+                previous = env;
+                env = new_env;
+            }
+
+            void return_to_previous_env(){
+                env = previous;
+                previous = nullptr;
             }
 
             void resolve(const ExprPtr& expr, size_t depth){
@@ -84,6 +93,10 @@ namespace lox::interpreter{
         VarValue look_up_var(const shared_ptr<Interpreter>& interpreter, const string& name, const ExprPtr& expr);
 
         void assign_var(const shared_ptr<Interpreter>& interpreter, const string& name, const ExprPtr& expr);
+
+        void set_current_env(const shared_ptr<Interpreter>& interpreter, const shared_ptr<Environment>& env);
+
+        void return_to_previous_env(const shared_ptr<Interpreter>& interpreter);
 
         shared_ptr<Environment> get_current_env(const shared_ptr<Interpreter>& interpreter);
 

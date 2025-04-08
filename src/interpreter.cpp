@@ -30,7 +30,7 @@ namespace lox::interpreter{
         globals->set("clock", make_shared<builtins::ClockFunc>());
     }
 
-    Interpreter::Interpreter(const string& file_contents){
+    Interpreter::Interpreter(const string& file_contents): previous(nullptr){
         env = make_shared<Environment>();
         globals = env;
         define_builtins();
@@ -40,7 +40,7 @@ namespace lox::interpreter{
         statements = parser.parse();
     }
 
-    Interpreter::Interpreter(const vector<StmtPtr>& statements): statements(statements){
+    Interpreter::Interpreter(const vector<StmtPtr>& statements): statements(statements), previous(nullptr){
         env = make_shared<Environment>();
         globals = env;
         define_builtins();
@@ -69,6 +69,14 @@ namespace lox::interpreter{
 
         shared_ptr<Environment> get_current_env(const shared_ptr<Interpreter>& interpreter){
             return interpreter->get_current_env();
+        }
+
+        void set_current_env(const shared_ptr<Interpreter>& interpreter, const shared_ptr<Environment>& env){
+            interpreter->set_current_env(env);
+        }
+
+        void return_to_previous_env(const shared_ptr<Interpreter>& interpreter){
+            interpreter->return_to_previous_env();
         }
 
         void add_nesting_level(const shared_ptr<Interpreter>& interpreter){

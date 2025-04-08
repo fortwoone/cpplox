@@ -21,14 +21,15 @@ namespace lox::callable{
         return holds_alternative<CallablePtr>(val);
     }
 
-    LoxFunction::LoxFunction(const shared_ptr<ast::Statement>& decl,const shared_ptr<Environment>& closure): AbstractLoxCallable(), decl(decl), closure(closure){}
+    LoxFunction::LoxFunction(const shared_ptr<ast::Statement>& decl,const shared_ptr<Environment>& closure): AbstractLoxCallable(), decl(decl), closure(closure){
+        child_env = get_child_env(closure);
+    }
 
     constexpr ubyte LoxFunction::arity() const{
         return get_arg_count(decl);
     }
 
     Value LoxFunction::call(const shared_ptr<Environment>& env, const vector<Value>& args) const{
-        auto child_env = get_child_env(closure);
         vector<Token> decl_args = get_args(decl);
 
         for (ubyte i = 0; i < get_arg_count(decl); ++i){
@@ -41,14 +42,15 @@ namespace lox::callable{
     }
 
     Value LoxFunction::call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args) const{
-        auto child_env = get_child_env(closure);
         vector<Token> decl_args = get_args(decl);
 
         for (ubyte i = 0; i < get_arg_count(decl); ++i){
             set_env_member(child_env, decl_args.at(i).get_lexeme(), args.at(i));
         }
 
-        Value ret_val = exec_func_body(child_env, decl);
+        set_current_env(interpreter, child_env);
+        Value ret_val = exec_func_body(interpreter, decl);
+        return_to_previous_env(interpreter);
 
         return ret_val;
     }

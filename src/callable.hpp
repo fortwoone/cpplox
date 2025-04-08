@@ -44,6 +44,9 @@ namespace lox::interpreter{
     namespace for_ast{
         shared_ptr<Environment> get_current_env(const shared_ptr<Interpreter>& interpreter);
 
+        void set_current_env(const shared_ptr<Interpreter>& interpreter, const shared_ptr<Environment>& env);
+
+        void return_to_previous_env(const shared_ptr<Interpreter>& interpreter);
 
         void add_nesting_level(const shared_ptr<Interpreter>& interpreter);
 
@@ -59,8 +62,11 @@ namespace lox::callable {
     using lox::ast::for_callable::get_func_name;
     using lox::env::Environment;
     using lox::interpreter::for_ast::get_current_env;
+    using lox::interpreter::for_ast::set_current_env;
+    using lox::interpreter::for_ast::return_to_previous_env;
     using lox::interpreter::for_ast::add_nesting_level;
     using lox::interpreter::for_ast::remove_nesting_level;
+
     using lox::interpreter::Interpreter;
     using lox::tokenizer::token::Token;
 
@@ -125,7 +131,7 @@ namespace lox::callable{
 
     class LoxFunction: public AbstractLoxCallable{
         shared_ptr<ast::Statement> decl;
-        shared_ptr<Environment> closure;
+        shared_ptr<Environment> closure, child_env;
 
         public:
             LoxFunction(const shared_ptr<ast::Statement>& decl, const shared_ptr<Environment>& closure);
