@@ -63,6 +63,7 @@ namespace lox::resolver{
         void resolve_assign_expr(const shared_ptr<ast::AssignmentExpr>& assign_expr);
         void resolve_unary_expr(const shared_ptr<ast::UnaryExpr>& unary_expr);
         void resolve_call_expr(const shared_ptr<ast::CallExpr>& call_expr);
+        void resolve_abstract_access_expr(const shared_ptr<ast::AbstractInstAccessExpr>& abst_acc_expr);
         void resolve_get_expr(const shared_ptr<ast::GetAttrExpr>& get_attr_expr);
         void resolve_set_expr(const shared_ptr<ast::SetAttrExpr>& set_attr_expr);
         void resolve_this_expr(const shared_ptr<ast::ThisExpr>& this_expr);
@@ -74,6 +75,7 @@ namespace lox::resolver{
         void resolve_block_stmt(const shared_ptr<ast::BlockStatement>& block_stmt);
         void resolve_variable_stmt(const shared_ptr<ast::VariableStatement>& var_stmt);
         void resolve_func_stmt(const shared_ptr<ast::FunctionStmt>& func_stmt);
+        void resolve_abstract_logical_stmt(const shared_ptr<ast::AbstractLogicalStmt>& abst_log_stmt);
         void resolve_if_stmt(const shared_ptr<ast::IfStatement>& if_stmt);
         void resolve_while_stmt(const shared_ptr<ast::WhileStatement>& while_stmt);
         void resolve_ret_stmt(const shared_ptr<ast::ReturnStmt>& ret_stmt);
