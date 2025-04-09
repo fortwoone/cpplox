@@ -64,8 +64,7 @@ namespace lox::resolver{
     void Resolver::resolve_var_expr(const shared_ptr<ast::VariableExpr>& var_expr){
         string var_name = var_expr->get_name();
         if (!scope_stack.empty()){
-            Scope deepest = scope_stack.back();
-            if (deepest.contains(var_name) && !deepest.at(var_name))
+            if (scope_stack.back().contains(var_name) && !scope_stack.back().at(var_name))
                 throw resolve_error("Can't read local variable in its own initialiser.\0");
         }
 
