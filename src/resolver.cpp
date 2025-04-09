@@ -165,7 +165,7 @@ namespace lox::resolver{
         if (current_func == FuncType::NONE){
             throw resolve_error("Cannot return from top-level code.");
         }
-        if (current_func == FuncType::INITIALISER){
+        if (current_func == FuncType::INITIALISER && ret_stmt->has_val()){
             throw resolve_error("Cannot return a value from an initialiser.");
         }
         if (ret_stmt->has_val())
