@@ -4,16 +4,17 @@
 
 #pragma once
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <variant>
 #include <vector>
 
 namespace lox{
     using ubyte = uint8_t;
-    using uint = uint32_t;
-    using ulong = uint64_t;
 
+    using std::enable_shared_from_this;
     using std::holds_alternative;
+    using std::shared_ptr;
     using std::string;
     using std::variant;
     using std::vector;

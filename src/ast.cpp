@@ -6,7 +6,7 @@
 
 namespace lox::ast{
     bool is_truthy(EvalResult eval_result){  // Truth operator check.
-        if (holds_alternative<string>(eval_result)){
+        if (is_string(eval_result)){
             return as_string(eval_result) != "nil";
         }
         else if (holds_alternative<bool>(eval_result)){
@@ -368,8 +368,8 @@ namespace lox::ast{
     // endregion
 
     // region AssignmentExpr
-    AssignmentExpr::AssignmentExpr(string name, shared_ptr<Expr> value)
-            : AbstractVarExpr(std::move(name)), value(std::move(value)){}
+    AssignmentExpr::AssignmentExpr(const string& name, shared_ptr<Expr> value)
+            : AbstractVarExpr(name), value(std::move(value)){}
 
     EvalResult AssignmentExpr::evaluate(const shared_ptr<Environment>& env){
         EvalResult val = value->evaluate(env);
@@ -413,8 +413,8 @@ namespace lox::ast{
     // endregion
 
     // region CallExpr
-    CallExpr::CallExpr(const shared_ptr<Expr>& callee, Token& paren, const vector<shared_ptr<Expr>>& args)
-            : callee(callee), paren(paren), args(args){}
+    CallExpr::CallExpr(const shared_ptr<Expr>& callee, const vector<shared_ptr<Expr>>& args)
+            : callee(callee), args(args){}
 
     string CallExpr::to_string() const{
         auto ret = callee->to_string() + "(";
@@ -603,16 +603,17 @@ namespace lox::ast{
     void PrintStatement::execute(const shared_ptr<Environment>& env){
         EvalResult result = expr->evaluate(env);
         if (holds_alternative<bool>(result)){
-            cout << (as_bool(result) ? "true" : "false") << endl;
+            cout << boolalpha << as_bool(result) << noboolalpha << endl;
         }
         else if (holds_alternative<double>(result)){
             auto previous = cout.precision();
-            if (static_cast<int>(as_double(result)) == as_double(result)){
+            bool is_integer = static_cast<int>(as_double(result)) == as_double(result);
+            if (is_integer){
                 cout << fixed << setprecision(0);
             }
             cout << as_double(result) << endl;
-            if (static_cast<int>(as_double(result)) == as_double(result)){
-                cout << setprecision(previous);
+            if (is_integer){
+                cout << setprecision(static_cast<int>(previous));
                 cout.unsetf(std::ios_base::fixed);
             }
         }
@@ -634,12 +635,13 @@ namespace lox::ast{
         }
         else if (holds_alternative<double>(result)){
             auto previous = cout.precision();
-            if (static_cast<int>(as_double(result)) == as_double(result)){
+            bool is_integer = static_cast<int>(as_double(result)) == as_double(result);
+            if (is_integer){
                 cout << fixed << setprecision(0);
             }
             cout << as_double(result) << endl;
-            if (static_cast<int>(as_double(result)) == as_double(result)){
-                cout << setprecision(previous);
+            if (is_integer){
+                cout << setprecision(static_cast<int>(previous));
                 cout.unsetf(std::ios_base::fixed);
             }
         }

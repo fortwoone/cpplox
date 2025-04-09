@@ -12,7 +12,7 @@ namespace lox::env{
     Environment::Environment(): enclosing(nullptr){}
 
     // Allows for nested variable scopes.
-    Environment::Environment(const shared_ptr<Environment>& enclosing_env): enclosing(enclosing_env){}
+    Environment::Environment(const EnvPtr& enclosing_env): enclosing(enclosing_env){}
 
     VarValue Environment::get(const string& name){  // NOLINT
         try{
@@ -30,7 +30,7 @@ namespace lox::env{
         vars.insert_or_assign(name, value);
     }
 
-    shared_ptr<Environment> Environment::get_ancestor(size_t distance){
+    EnvPtr Environment::get_ancestor(size_t distance){
         auto ret = shared_from_this();
         for (size_t i = 0; i < distance; ++i){
             ret = ret->get_enclosing();
@@ -57,15 +57,15 @@ namespace lox::env{
     }
 
     namespace for_callable{
-        shared_ptr<Environment> get_child_env(const shared_ptr<Environment>& orig){
+        EnvPtr get_child_env(const EnvPtr& orig){
             return make_shared<Environment>(orig);
         }
 
-        VarValue value_of_this(const shared_ptr<Environment>& orig){
+        VarValue value_of_this(const EnvPtr& orig){
             return orig->get_at(0, "this");
         }
 
-        void set_env_member(const shared_ptr<Environment>& func_env, const string& name, VarValue value){
+        void set_env_member(const EnvPtr& func_env, const string& name, VarValue value){
             func_env->set(name, value);
         }
     }

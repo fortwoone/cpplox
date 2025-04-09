@@ -226,7 +226,7 @@ namespace lox::ast {
         string name;
 
     public:
-        AbstractVarExpr(const string &name) : name(name) {};
+        explicit AbstractVarExpr(const string &name) : name(name) {};
 
         [[nodiscard]] string get_name() const {
             return name;
@@ -254,7 +254,7 @@ namespace lox::ast {
         shared_ptr<Expr> value;
 
     public:
-        AssignmentExpr(string name, shared_ptr<Expr> value);
+        AssignmentExpr(const string& name, shared_ptr<Expr> value);
 
         [[nodiscard]] shared_ptr<Expr> get_value() const {
             return value;
@@ -281,11 +281,10 @@ namespace lox::ast {
 
     class CallExpr : public Expr {
         shared_ptr<Expr> callee;
-        Token &paren;
         vector<shared_ptr<Expr>> args;
 
     public:
-        CallExpr(const shared_ptr<Expr> &callee, Token &paren, const vector<shared_ptr<Expr>> &args);
+        CallExpr(const shared_ptr<Expr> &callee, const vector<shared_ptr<Expr>> &args);
 
         [[nodiscard]] shared_ptr<Expr> get_callee() const {
             return callee;

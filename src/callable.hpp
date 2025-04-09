@@ -65,16 +65,10 @@ namespace lox::interpreter{
 // Actual file declarations (part 1)
 namespace lox::callable {
     using lox::ubyte;
-    using lox::ast::for_callable::get_args;
-    using lox::ast::for_callable::get_arg_count;
-    using lox::ast::for_callable::get_func_name;
+    using namespace lox::ast::for_callable;
     using lox::env::Environment;
     using lox::inst::LoxInstance;
-    using lox::interpreter::for_ast::get_current_env;
-    using lox::interpreter::for_ast::set_current_env;
-    using lox::interpreter::for_ast::return_to_previous_env;
-    using lox::interpreter::for_ast::add_nesting_level;
-    using lox::interpreter::for_ast::remove_nesting_level;
+    using namespace lox::interpreter::for_ast;
 
     using lox::interpreter::Interpreter;
     using lox::tokenizer::token::Token;
@@ -105,8 +99,8 @@ namespace lox::callable {
 
         [[nodiscard]] virtual constexpr ubyte arity() const = 0;
 
-        [[nodiscard]] virtual Value call(const shared_ptr<Interpreter>& interpreter, const vector<Value> &args) = 0;
-        [[nodiscard]] virtual Value call(const shared_ptr<Environment>& env, const vector<Value> &args) = 0;
+        [[nodiscard]] virtual Value call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args) = 0;
+        [[nodiscard]] virtual Value call(const shared_ptr<Environment>& env, const vector<Value>& args) = 0;
     };
 
 }
@@ -155,7 +149,7 @@ namespace lox::callable {
         bool is_init;
 
     public:
-        LoxFunction(const shared_ptr<ast::Statement> &decl, const shared_ptr<Environment> &closure, bool is_initialiser);
+        LoxFunction(const shared_ptr<ast::Statement>& decl, const shared_ptr<Environment>& closure, bool is_initialiser);
 
         [[nodiscard]] string to_string() const final {
             return "<fn " + get_func_name(decl) + ">";
@@ -169,9 +163,9 @@ namespace lox::callable {
 
         [[nodiscard]] constexpr ubyte arity() const final;
 
-        [[nodiscard]] Value call(const shared_ptr<Interpreter> &interpreter, const vector<Value> &args) final;
+        [[nodiscard]] Value call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args) final;
 
-        [[nodiscard]] Value call(const shared_ptr<Environment> &env, const vector<Value> &args) final;
+        [[nodiscard]] Value call(const shared_ptr<Environment>& env, const vector<Value>& args) final;
     };
 
     class LoxClass;

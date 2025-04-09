@@ -96,11 +96,10 @@ namespace lox::parser{
             } while (match(COMMA));
         }
 
-        Token& paren = consume(RIGHT_PAREN, "Expected ')' after arguments.");
+        consume(RIGHT_PAREN, "Expected ')' after arguments.");
 
         return make_shared<ast::CallExpr>(
             callee,
-            paren,
             args
         );
     }

@@ -21,16 +21,20 @@ namespace lox::env{
 
     using lox::callable::VarValue;
 
+    class Environment;
+
+    using EnvPtr = shared_ptr<Environment>;
+
     class Environment: public enable_shared_from_this<Environment>{
         unordered_map<string, VarValue> vars;
-        shared_ptr<Environment> enclosing; // Reference to parent environment for local scopes.
+        EnvPtr enclosing; // Reference to parent environment for local scopes.
 
         public:
             Environment();
 
-            explicit Environment(const shared_ptr<Environment>& enclosing_env);
+            explicit Environment(const EnvPtr& enclosing_env);
 
-            [[nodiscard]] shared_ptr<Environment> get_enclosing(){
+            [[nodiscard]] EnvPtr get_enclosing(){
                 return enclosing;
             }
 
@@ -40,22 +44,18 @@ namespace lox::env{
 
             void assign(const string& name, VarValue val);
 
-            [[nodiscard]] shared_ptr<Environment> get_ancestor(size_t distance);
+            [[nodiscard]] EnvPtr get_ancestor(size_t distance);
 
             [[nodiscard]] VarValue get_at(size_t distance, const string& name);
 
             void assign_at(size_t distance, const string& name, VarValue val);
-
-            [[nodiscard]] shared_ptr<Environment> get_nested_env(){
-                return make_shared<Environment>(shared_from_this());
-            }
     };
 
     namespace for_callable{
-        shared_ptr<Environment> get_child_env(const shared_ptr<Environment>& orig);
+        EnvPtr get_child_env(const EnvPtr& orig);
 
-        VarValue value_of_this(const shared_ptr<Environment>& orig);
+        VarValue value_of_this(const EnvPtr& orig);
 
-        void set_env_member(const shared_ptr<Environment>& func_env, const string& name, VarValue value);
+        void set_env_member(const EnvPtr& func_env, const string& name, VarValue value);
     }
 }

@@ -30,11 +30,10 @@ int main(int argc, char *argv[]) {
     cout << unitbuf;
     cerr << unitbuf;
 
-    // You can use print statements as follows for debugging, they'll be visible when running tests.
-    cerr << "Logs from your program will appear here!" << endl;
+    cerr << "Error logs:" << endl;
 
     if (argc < 3) {
-        cerr << "Usage: ./your_program tokenize|parse|run <filename>" << endl;
+        cerr << "Usage: ./interpreter tokenize|parse|run <filename>" << endl;
         return 1;
     }
 

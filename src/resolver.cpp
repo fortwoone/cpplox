@@ -88,13 +88,17 @@ namespace lox::resolver{
         }
     }
 
+    void Resolver::resolve_abstract_access_expr(const shared_ptr<ast::AbstractInstAccessExpr>& abst_acc_expr){
+        resolve(abst_acc_expr->get_obj());
+    }
+
     void Resolver::resolve_get_expr(const shared_ptr<ast::GetAttrExpr>& get_attr_expr){
-        resolve(get_attr_expr->get_obj());
+        resolve_abstract_access_expr(get_attr_expr);
     }
 
     void Resolver::resolve_set_expr(const shared_ptr<ast::SetAttrExpr>& set_attr_expr){
         resolve(set_attr_expr->get_value());
-        resolve(set_attr_expr->get_obj());
+        resolve_abstract_access_expr(set_attr_expr);
     }
 
     void Resolver::resolve_this_expr(const shared_ptr<ast::ThisExpr>& this_expr){

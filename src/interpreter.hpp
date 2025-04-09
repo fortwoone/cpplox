@@ -19,6 +19,7 @@
 namespace lox::interpreter{
     namespace builtins = lox::callable::builtins;
     using lox::env::Environment;
+    using lox::env::EnvPtr;
     using lox::callable::VarValue;
     using lox::parser::ExprPtr;
     using lox::parser::Parser;
@@ -39,8 +40,8 @@ namespace lox::interpreter{
 
     class Interpreter: public enable_shared_from_this<Interpreter>{
         vector<StmtPtr> statements;
-        shared_ptr<Environment> globals, env;
-        stack<shared_ptr<Environment>> previous_envs;
+        EnvPtr globals, env;
+        stack<EnvPtr> previous_envs;
         unordered_map<ExprPtr, size_t> locals;
 
         friend VarValue for_ast::look_up_var(const shared_ptr<Interpreter>& interpreter, const string& name, const shared_ptr<ast::Expr>& expr);
@@ -103,11 +104,11 @@ namespace lox::interpreter{
 
         size_t get_super_dist(const shared_ptr<Interpreter>& interpreter, const shared_ptr<ast::SuperExpr>& expr);
 
-        void set_current_env(const shared_ptr<Interpreter>& interpreter, const shared_ptr<Environment>& env);
+        void set_current_env(const shared_ptr<Interpreter>& interpreter, const EnvPtr& env);
 
         void return_to_previous_env(const shared_ptr<Interpreter>& interpreter);
 
-        shared_ptr<Environment> get_current_env(const shared_ptr<Interpreter>& interpreter);
+        EnvPtr get_current_env(const shared_ptr<Interpreter>& interpreter);
 
         void add_nesting_level(const shared_ptr<Interpreter>& interpreter);
 
