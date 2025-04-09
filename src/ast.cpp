@@ -379,8 +379,9 @@ namespace lox::ast{
     }
 
     EvalResult AssignmentExpr::evaluate(const shared_ptr<Interpreter>& interpreter){
+        EvalResult evaled = value->evaluate(interpreter);
         assign_var(interpreter, name, value);
-        return value->evaluate(interpreter);
+        return evaled;
     }
     // endregion
 
