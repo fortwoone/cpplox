@@ -31,13 +31,21 @@ namespace lox::resolver{
 
     enum class FuncType: ubyte{
         NONE,
-        FUNCTION
+        FUNCTION,
+        INITIALISER,
+        METHOD
+    };
+
+    enum class ClassType: ubyte{
+        NONE,
+        CLASS
     };
 
     class Resolver: public enable_shared_from_this<Resolver>{
         shared_ptr<Interpreter> interpreter;
         deque<Scope> scope_stack;
         FuncType current_func;
+        ClassType current_cls;
 
         void start_scope();
         void finish_scope();
@@ -54,9 +62,13 @@ namespace lox::resolver{
         void resolve_assign_expr(const shared_ptr<ast::AssignmentExpr>& assign_expr);
         void resolve_unary_expr(const shared_ptr<ast::UnaryExpr>& unary_expr);
         void resolve_call_expr(const shared_ptr<ast::CallExpr>& call_expr);
+        void resolve_get_expr(const shared_ptr<ast::GetAttrExpr>& get_attr_expr);
+        void resolve_set_expr(const shared_ptr<ast::SetAttrExpr>& set_attr_expr);
+        void resolve_this_expr(const shared_ptr<ast::ThisExpr>& this_expr);
         // endregion
 
         // region Resolve methods for individual statement types
+        void resolve_class_stmt(const shared_ptr<ast::ClassStmt>& class_stmt);
         void resolve_block_stmt(const shared_ptr<ast::BlockStatement>& block_stmt);
         void resolve_variable_stmt(const shared_ptr<ast::VariableStatement>& var_stmt);
         void resolve_func_stmt(const shared_ptr<ast::FunctionStmt>& func_stmt);
@@ -72,6 +84,7 @@ namespace lox::resolver{
         public:
             explicit Resolver(const shared_ptr<Interpreter>& interpreter): interpreter(interpreter){
                 current_func = FuncType::NONE;
+                current_cls = ClassType::NONE;
             }
 
             void resolve(const vector<shared_ptr<ast::Statement>>& statements);

@@ -122,6 +122,7 @@ namespace lox::parser{
         [[nodiscard]] StmtPtr get_statement();
         [[nodiscard]] StmtPtr get_var_declaration();
         [[nodiscard]] StmtPtr get_func_decl(bool is_method);
+        [[nodiscard]] StmtPtr get_class_decl();
         [[nodiscard]] StmtPtr get_declaration();
         // endregion
 

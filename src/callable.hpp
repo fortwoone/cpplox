@@ -8,10 +8,11 @@
 #include <memory>
 #include <stack>
 #include <string>
+#include <unordered_map>
 #include "utils.hpp"
 #include "tokenizer.hpp"
 
-// Forward declarations
+// Forward declarations (part 1)
 namespace lox::env{
     using std::shared_ptr;
 
@@ -34,6 +35,12 @@ namespace lox::ast{
 
         ubyte get_arg_count(const shared_ptr<Statement>& func_stmt);
     }
+}
+
+namespace lox::inst{
+    using std::shared_ptr;
+
+    class LoxInstance;
 }
 
 namespace lox::interpreter{
@@ -62,6 +69,7 @@ namespace lox::callable {
     using lox::ast::for_callable::get_arg_count;
     using lox::ast::for_callable::get_func_name;
     using lox::env::Environment;
+    using lox::inst::LoxInstance;
     using lox::interpreter::for_ast::get_current_env;
     using lox::interpreter::for_ast::set_current_env;
     using lox::interpreter::for_ast::return_to_previous_env;
@@ -71,6 +79,8 @@ namespace lox::callable {
     using lox::interpreter::Interpreter;
     using lox::tokenizer::token::Token;
 
+    using std::dynamic_pointer_cast;
+    using std::enable_shared_from_this;
     using std::make_shared;
     using std::shared_ptr;
     using std::stack;
@@ -81,12 +91,13 @@ namespace lox::callable {
     class AbstractLoxCallable;
 
     using CallablePtr = shared_ptr<AbstractLoxCallable>;
+    using InstancePtr = shared_ptr<LoxInstance>;
 
-    using Value = variant<double, bool, string, CallablePtr>;
+    using Value = variant<double, bool, string, CallablePtr, InstancePtr>;
     using VarValue = Value;
     using EvalResult = Value;
 
-    class AbstractLoxCallable {
+    class AbstractLoxCallable: public enable_shared_from_this<AbstractLoxCallable>{
     public:
         virtual ~AbstractLoxCallable() = default;
 
@@ -100,6 +111,7 @@ namespace lox::callable {
 
 }
 
+// Forward declarations (part 2)
 namespace lox::ast::for_callable{
     using lox::callable::EvalResult;
     using lox::interpreter::Interpreter;
@@ -114,36 +126,86 @@ namespace lox::env::for_callable{
 
     shared_ptr<Environment> get_child_env(const shared_ptr<Environment>& orig);
 
+    VarValue value_of_this(const shared_ptr<Environment>& orig);
+
     void set_env_member(const shared_ptr<Environment>& func_env, const string& name, VarValue value);
 }
 
 // Actual file declarations (part 2)
-namespace lox::callable{
+namespace lox::callable {
     using lox::ast::for_callable::exec_func_body;
     using lox::env::for_callable::get_child_env;
     using lox::env::for_callable::set_env_member;
+    using lox::env::for_callable::value_of_this;
 
-    bool is_number(const Value& val);
+    bool is_number(const Value &val);
 
-    bool is_boolean(const Value& val);
+    bool is_boolean(const Value &val);
 
-    bool is_string(const Value& val);
+    bool is_string(const Value &val);
 
-    bool is_callable(const Value& val);
+    bool is_callable(const Value &val);
 
-    class LoxFunction: public AbstractLoxCallable{
+    bool is_cls_inst(const Value &val);
+
+    class LoxFunction : public AbstractLoxCallable {
         shared_ptr<ast::Statement> decl;
         shared_ptr<Environment> closure, child_env;
         stack<shared_ptr<Environment>> prev_children;
+        bool is_init;
+
+    public:
+        LoxFunction(const shared_ptr<ast::Statement> &decl, const shared_ptr<Environment> &closure, bool is_initialiser);
+
+        [[nodiscard]] string to_string() const final {
+            return "<fn " + get_func_name(decl) + ">";
+        }
+
+        [[nodiscard]] bool is_initialiser() const{
+            return is_init;
+        }
+
+        shared_ptr<LoxFunction> bind(const InstancePtr& inst);
+
+        [[nodiscard]] constexpr ubyte arity() const final;
+
+        [[nodiscard]] Value call(const shared_ptr<Interpreter> &interpreter, const vector<Value> &args) final;
+
+        [[nodiscard]] Value call(const shared_ptr<Environment> &env, const vector<Value> &args) final;
+    };
+
+    class LoxClass;
+}
+
+// Forward declarations (part 3)
+namespace lox::inst::for_callable{
+    using lox::callable::LoxClass;
+
+    shared_ptr<LoxInstance> create_inst(const shared_ptr<LoxClass>& cls);
+}
+
+// Actual file declarations (part 3)
+namespace lox::callable{
+    using lox::inst::for_callable::create_inst;
+
+    using std::unordered_map;
+    using MethodMap = unordered_map<string, shared_ptr<LoxFunction>>;
+
+    class LoxClass: public AbstractLoxCallable{
+        string name;
+        MethodMap methods;
+        ubyte init_arity;
 
         public:
-            LoxFunction(const shared_ptr<ast::Statement>& decl, const shared_ptr<Environment>& closure);
+            explicit LoxClass(const string& cls_name, const MethodMap& meths);
 
-            [[nodiscard]] string to_string() const{
-                return "<fn " + get_func_name(decl) + ">";
-            }
+            shared_ptr<LoxFunction> find_meth(const string& meth_name);
 
             [[nodiscard]] constexpr ubyte arity() const final;
+
+            [[nodiscard]] string to_string() const final{
+                return name;
+            }
 
             [[nodiscard]] Value call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args) final;
             [[nodiscard]] Value call(const shared_ptr<Environment>& env, const vector<Value>& args) final;

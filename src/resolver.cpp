@@ -84,9 +84,49 @@ namespace lox::resolver{
             resolve(arg);
         }
     }
+
+    void Resolver::resolve_get_expr(const shared_ptr<ast::GetAttrExpr>& get_attr_expr){
+        resolve(get_attr_expr->get_obj());
+    }
+
+    void Resolver::resolve_set_expr(const shared_ptr<ast::SetAttrExpr>& set_attr_expr){
+        resolve(set_attr_expr->get_value());
+        resolve(set_attr_expr->get_obj());
+    }
+
+    void Resolver::resolve_this_expr(const shared_ptr<ast::ThisExpr>& this_expr){
+        if (current_cls == ClassType::NONE){
+            throw resolve_error("Can't use 'this' outside of classes.");
+        }
+        resolve_local(this_expr, "this");
+    }
     // endregion
 
     // region Resolve methods for individual statement types
+    void Resolver::resolve_class_stmt(const shared_ptr<ast::ClassStmt>& class_stmt){
+        ClassType enclosing_cls = current_cls;
+        current_cls = ClassType::CLASS;
+
+        declare(class_stmt->get_name());
+        define(class_stmt->get_name());
+
+        start_scope();
+        scope_stack.back().insert({"this", true});  // Allow the resolver to take care of this expressions.
+
+        FuncType decl = FuncType::METHOD;
+        for (const auto& meth: class_stmt->get_meths()){
+            if (meth->get_name() == "init"){
+                decl = FuncType::INITIALISER;
+            }
+
+            resolve_func(meth, decl);
+            decl = FuncType::METHOD;
+        }
+
+        finish_scope();
+        current_cls = enclosing_cls;
+    }
+
     void Resolver::resolve_block_stmt(const shared_ptr<ast::BlockStatement>& block_stmt){
         start_scope();
         resolve(block_stmt->get_stmts());
@@ -125,6 +165,9 @@ namespace lox::resolver{
         if (current_func == FuncType::NONE){
             throw resolve_error("Cannot return from top-level code.");
         }
+        if (current_func == FuncType::INITIALISER){
+            throw resolve_error("Cannot return a value from an initialiser.");
+        }
         if (ret_stmt->has_val())
             resolve(ret_stmt->get_expr());
     }
@@ -156,9 +199,25 @@ namespace lox::resolver{
         if (as_call_expr != nullptr){
             return resolve_call_expr(as_call_expr);
         }
+        auto as_this = dynamic_pointer_cast<ast::ThisExpr>(expr);
+        if (as_this != nullptr){
+            return resolve_this_expr(as_this);
+        }
+        auto as_set_attr = dynamic_pointer_cast<ast::SetAttrExpr>(expr);
+        if (as_set_attr != nullptr){
+            return resolve_set_expr(as_set_attr);
+        }
+        auto as_get_attr = dynamic_pointer_cast<ast::GetAttrExpr>(expr);
+        if (as_get_attr != nullptr){
+            return resolve_get_expr(as_get_attr);
+        }
     }
 
     void Resolver::resolve(const shared_ptr<ast::Statement>& stmt){
+        auto as_class_stmt = dynamic_pointer_cast<ast::ClassStmt>(stmt);
+        if (as_class_stmt != nullptr){
+            return resolve_class_stmt(as_class_stmt);
+        }
         auto as_block_stmt = dynamic_pointer_cast<ast::BlockStatement>(stmt);
         if (as_block_stmt != nullptr){
             return resolve_block_stmt(as_block_stmt);

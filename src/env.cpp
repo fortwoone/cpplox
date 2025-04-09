@@ -61,6 +61,10 @@ namespace lox::env{
             return make_shared<Environment>(orig);
         }
 
+        VarValue value_of_this(const shared_ptr<Environment>& orig){
+            return orig->get_at(0, "this");
+        }
+
         void set_env_member(const shared_ptr<Environment>& func_env, const string& name, VarValue value){
             func_env->set(name, value);
         }

@@ -54,6 +54,8 @@ namespace lox::env{
     namespace for_callable{
         shared_ptr<Environment> get_child_env(const shared_ptr<Environment>& orig);
 
+        VarValue value_of_this(const shared_ptr<Environment>& orig);
+
         void set_env_member(const shared_ptr<Environment>& func_env, const string& name, VarValue value);
     }
 }

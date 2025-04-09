@@ -50,6 +50,10 @@ namespace lox::parser{
             return make_shared<ast::LiteralExpr>(LiteralExprType::NIL);
         }
 
+        if (match(THIS)){
+            return make_shared<ast::ThisExpr>(previous());
+        }
+
         if (match(IDENTIFIER)){
             return make_shared<ast::VariableExpr>(previous());
         }
@@ -95,10 +99,16 @@ namespace lox::parser{
     }
 
     ExprPtr Parser::get_call(){  // NOLINT
+        using enum TokenType;
+
         ExprPtr expr = get_primary();
         while (true){
-            if (match(TokenType::LEFT_PAREN)){
+            if (match(LEFT_PAREN)){
                 expr = get_call_end(expr);
+            }
+            else if (match(DOT)){
+                Token name = consume(IDENTIFIER, "Expected property name after '.'.");
+                expr = make_shared<ast::GetAttrExpr>(expr, name);
             }
             else{
                 break;
@@ -244,6 +254,15 @@ namespace lox::parser{
             if (as_var_expr != nullptr){
                 return make_shared<ast::AssignmentExpr>(
                     as_var_expr->get_name(),
+                    value
+                );
+            }
+            auto as_get_attr = dynamic_pointer_cast<ast::GetAttrExpr>(expr);
+            if (as_get_attr != nullptr){
+                ExprPtr obj = as_get_attr->get_obj();
+                return make_shared<ast::SetAttrExpr>(
+                    obj,
+                    as_get_attr->get_attr_token(),
                     value
                 );
             }
@@ -485,7 +504,34 @@ namespace lox::parser{
         return ret;
     }
 
+    StmtPtr Parser::get_class_decl(){  // NOLINT
+        using enum TokenType;
+
+        Token name = consume(IDENTIFIER, "Expected class name.");
+        consume(LEFT_BRACE, "Expected '{' before class body.");
+
+        vector<shared_ptr<ast::FunctionStmt>> meths;
+        vector<StmtPtr> raw_meth_ptrs;
+        while (!check(RIGHT_BRACE) && !is_at_end()){
+            raw_meth_ptrs.emplace_back(get_func_decl(true));
+        }
+        meths.reserve(raw_meth_ptrs.size());
+        for (const auto& ptr: raw_meth_ptrs){
+            auto as_func_stmt = dynamic_pointer_cast<ast::FunctionStmt>(ptr);
+            if (as_func_stmt == nullptr){
+                throw parse_error(65, "CRITICAL ERROR! At least one statement in class is not a method.");
+            }
+            meths.push_back(as_func_stmt);
+        }
+
+        consume(RIGHT_BRACE, "Expected '}' after class body.");
+        return make_shared<ast::ClassStmt>(name, meths);
+    }
+
     StmtPtr Parser::get_declaration(){  // NOLINT
+        if (match(TokenType::CLASS)){
+            return get_class_decl();
+        }
         if (match(TokenType::FUN)){
             return get_func_decl(false);
         }

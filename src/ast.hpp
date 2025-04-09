@@ -4,6 +4,7 @@
 
 #pragma once
 #include "callable.hpp"
+#include "instance.hpp"
 #include "env.hpp"
 #include "exceptions.hpp"
 #include "tokenizer.hpp"
@@ -47,9 +48,13 @@ namespace lox::interpreter{
 
 namespace lox::ast{
     using lox::callable::CallablePtr;
-    using lox::callable::LoxFunction;
     using lox::callable::EvalResult;
+    using lox::callable::InstancePtr;
+    using lox::callable::LoxClass;
+    using lox::callable::LoxFunction;
+    using lox::callable::MethodMap;
     using lox::env::Environment;
+    using lox::inst::LoxInstance;
     using lox::interpreter::Interpreter;
     using lox::interpreter::for_ast::look_up_var;
     using lox::interpreter::for_ast::assign_var;
@@ -82,6 +87,7 @@ namespace lox::ast{
 #   define as_bool get<bool>
 #   define as_string get<string>
 #   define as_func get<CallablePtr>
+#   define as_cls_inst get<InstancePtr>
 
     bool is_truthy(EvalResult eval_result);
 
@@ -280,6 +286,73 @@ namespace lox::ast{
             [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) final;
             [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) final;
     };
+
+    class AbstractInstAccessExpr: public Expr{
+        protected:
+            shared_ptr<Expr> obj;
+            Token attr_token;
+            string attr_name;
+
+        public:
+            explicit AbstractInstAccessExpr(const shared_ptr<Expr>& target, const Token& attr);
+
+            [[nodiscard]] shared_ptr<Expr> get_obj() const{
+                return obj;
+            }
+
+            [[nodiscard]] Token get_attr_token() const{
+                return attr_token;
+            }
+
+            [[nodiscard]] string get_attr_name() const{
+                return attr_name;
+            }
+
+            [[nodiscard]] string to_string() const override;
+
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) override = 0;
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) override = 0;
+    };
+
+    class GetAttrExpr: public AbstractInstAccessExpr{
+        public:
+            explicit GetAttrExpr(const shared_ptr<Expr>& target, const Token& attr);
+
+            [[nodiscard]] string to_string() const final;
+
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) final;
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) final;
+    };
+
+    class SetAttrExpr: public AbstractInstAccessExpr{
+        shared_ptr<Expr> value;
+
+        public:
+            explicit SetAttrExpr(const shared_ptr<Expr>& target, const Token& attr, const shared_ptr<Expr>& value);
+
+            [[nodiscard]] shared_ptr<Expr> get_value() const{
+                return value;
+            }
+
+            [[nodiscard]] string to_string() const final;
+
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) final;
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) final;
+    };
+
+    class ThisExpr: public Expr{
+        Token kw;
+
+        public:
+            explicit ThisExpr(const Token& token): kw(token){}
+
+            [[nodiscard]] string to_string() const final{
+                return "this";
+            }
+
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) final;
+            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) final;
+    };
     // endregion
 
     // Base class for statements. A statement is an instruction executed by the interpreter.
@@ -442,6 +515,25 @@ namespace lox::ast{
 
             [[nodiscard]] bool has_val() const{
                 return (expr != nullptr);
+            }
+
+            void execute(const shared_ptr<Environment>& env) final;
+            void execute(const shared_ptr<Interpreter>& interpreter) final;
+    };
+
+    class ClassStmt: public Statement{
+        string name;
+        vector<shared_ptr<FunctionStmt>> methods;
+
+        public:
+            explicit ClassStmt(const Token& id_token, const vector<shared_ptr<FunctionStmt>>& meths);
+
+            [[nodiscard]] string get_name() const{
+                return name;
+            }
+
+            [[nodiscard]] vector<shared_ptr<FunctionStmt>> get_meths() const{
+                return methods;
             }
 
             void execute(const shared_ptr<Environment>& env) final;

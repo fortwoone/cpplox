@@ -349,7 +349,6 @@ namespace lox::ast{
     }
     // endregion
 
-
     // region VariableExpr
     // Using const references to shared pointers to make absolutely SURE memory doesn't get out of hand when
     // handing a pointer to the environment object.
@@ -478,6 +477,86 @@ namespace lox::ast{
     }
     // endregion
 
+    // region AbstractInstAccessExpr
+    AbstractInstAccessExpr::AbstractInstAccessExpr(const shared_ptr<Expr>& target, const Token& attr)
+    : obj(target), attr_name(attr.get_lexeme()), attr_token(attr){
+        if (attr.get_token_type() != TokenType::IDENTIFIER){
+            throw parse_error(65, "An identifier is required for a GetAttr expression.");
+        }
+    }
+
+    string AbstractInstAccessExpr::to_string() const{
+        return obj->to_string() + "." + attr_name;
+    }
+    // endregion
+
+    // region GetAttrExpr
+    GetAttrExpr::GetAttrExpr(const shared_ptr<Expr>& target, const Token& attr): AbstractInstAccessExpr(target, attr){}
+
+    string GetAttrExpr::to_string() const{
+        return AbstractInstAccessExpr::to_string();
+    }
+
+    EvalResult GetAttrExpr::evaluate(const shared_ptr<Environment>& env){
+        EvalResult object = obj->evaluate(env);
+        if (holds_alternative<InstancePtr>(object)){
+            return as_cls_inst(object)->get_attr(attr_name);
+        }
+        throw runtime_error("Can only access attributes from class instances.");
+    }
+
+    EvalResult GetAttrExpr::evaluate(const shared_ptr<Interpreter>& interpreter){
+        EvalResult object = obj->evaluate(interpreter);
+        if (holds_alternative<InstancePtr>(object)){
+            return as_cls_inst(object)->get_attr(attr_name);
+        }
+        throw runtime_error("Can only access attributes from class instances.");
+    }
+    // endregion
+
+    // region SetAttrExpr
+    SetAttrExpr::SetAttrExpr(const shared_ptr<Expr>& target, const Token& attr, const shared_ptr<Expr>& value)
+    : AbstractInstAccessExpr(target, attr), value(value){}
+
+    string SetAttrExpr::to_string() const{
+        return AbstractInstAccessExpr::to_string() + " = " + value->to_string();
+    }
+
+    EvalResult SetAttrExpr::evaluate(const shared_ptr<Environment>& env){
+        EvalResult object = obj->evaluate(env);
+
+        if (!holds_alternative<InstancePtr>(object)){
+            throw runtime_error("Cannot access fields from non-instance values.");
+        }
+
+        EvalResult val = value->evaluate(env);
+        as_cls_inst(object)->set_attr(attr_name, val);
+        return val;
+    }
+
+    EvalResult SetAttrExpr::evaluate(const shared_ptr<Interpreter>& interpreter){
+        EvalResult object = obj->evaluate(interpreter);
+
+        if (!holds_alternative<InstancePtr>(object)){
+            throw runtime_error("Cannot access fields from non-instance values.");
+        }
+
+        EvalResult val = value->evaluate(interpreter);
+        as_cls_inst(object)->set_attr(attr_name, val);
+        return val;
+    }
+    // endregion
+
+    // region ThisExpr
+    EvalResult ThisExpr::evaluate(const shared_ptr<Environment>& env){
+        return env->get("this");
+    }
+
+    EvalResult ThisExpr::evaluate(const shared_ptr<Interpreter>& interpreter){
+        return look_up_var(interpreter, "this", shared_from_this());
+    }
+    // endregion
+
     // region ExprStatement
     void ExprStatement::execute(const shared_ptr<Environment>& env){
         EvalResult result = expr->evaluate(env);
@@ -507,6 +586,9 @@ namespace lox::ast{
         }
         else if (holds_alternative<CallablePtr>(result)){
             cout << as_func(result)->to_string() << endl;
+        }
+        else if (holds_alternative<InstancePtr>(result)){
+            cout << as_cls_inst(result)->to_string() << endl;
         }
         else{
             cout << as_string(result) << endl;
@@ -643,7 +725,7 @@ namespace lox::ast{
         shared_ptr<Statement> shared = shared_from_this();
         env->set(
             name,
-            make_shared<LoxFunction>(shared, env)
+            make_shared<LoxFunction>(shared, env, false)
         );
     }
 
@@ -728,6 +810,38 @@ namespace lox::ast{
             throw return_exc("nil");
         }
         throw return_exc(expr->evaluate(interpreter));
+    }
+    // endregion
+
+    // region ClassStmt
+    ClassStmt::ClassStmt(const Token& id_token, const vector<shared_ptr<FunctionStmt>>& meths)
+    : name(id_token.get_lexeme()), methods(meths){
+        if (id_token.get_token_type() != TokenType::IDENTIFIER){
+            throw parse_error(65, "Classes must be declared using non-literal values.\0");
+        }
+    }
+
+    void ClassStmt::execute(const shared_ptr<Environment>& env){
+        MethodMap meth_map;
+        meth_map.reserve(methods.size());
+
+        for (const auto& meth_decl: methods){
+            meth_map.insert(
+                {
+                    meth_decl->get_name(),
+                    make_shared<LoxFunction>(meth_decl, env, meth_decl->get_name() == "init")
+                }
+            );
+        }
+
+        env->set(
+            name,
+            make_shared<LoxClass>(name, meth_map)
+        );
+    }
+
+    void ClassStmt::execute(const shared_ptr<Interpreter>& interpreter){
+        execute(get_current_env(interpreter));
     }
     // endregion
 }
