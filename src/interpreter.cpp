@@ -28,6 +28,8 @@ namespace lox::interpreter{
 
     void Interpreter::define_builtins(){
         globals->set("clock", make_shared<builtins::ClockFunc>());
+        globals->set("cos", make_shared<builtins::CosFunc>());
+        globals->set("sin", make_shared<builtins::SinFunc>());
     }
 
     Interpreter::Interpreter(const string& file_contents){

@@ -128,12 +128,44 @@ namespace lox::callable{
     // endregion
 
     namespace builtins{
-        Value ClockFunc::call(const shared_ptr<Environment>& interpreter, const vector<Value> &args){
+        Value ClockFunc::call(const shared_ptr<Environment>& interpreter, const vector<Value>& args){
             return (double)time(nullptr);
         }
 
-        Value ClockFunc::call(const shared_ptr<Interpreter>& interpreter, const vector<Value> &args){
+        Value ClockFunc::call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args){
             return (double)time(nullptr);
+        }
+
+        Value SinFunc::call(const shared_ptr<Environment>& env, const vector<Value>& args){
+            EvalResult nb = args.at(0);
+            if (!is_number(nb)){
+                throw runtime_error("A number is needed when calling sin.");
+            }
+            return sin(get<double>(nb));
+        }
+
+        Value SinFunc::call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args){
+            EvalResult nb = args.at(0);
+            if (!is_number(nb)){
+                throw runtime_error("A number is needed when calling sin.");
+            }
+            return sin(get<double>(nb));
+        }
+
+        Value CosFunc::call(const shared_ptr<Environment>& env, const vector<Value>& args){
+            EvalResult nb = args.at(0);
+            if (!is_number(nb)){
+                throw runtime_error("A number is needed when calling cos.");
+            }
+            return cos(get<double>(nb));
+        }
+
+        Value CosFunc::call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args){
+            EvalResult nb = args.at(0);
+            if (!is_number(nb)){
+                throw runtime_error("A number is needed when calling cos.");
+            }
+            return cos(get<double>(nb));
         }
     }
 }

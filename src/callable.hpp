@@ -3,10 +3,12 @@
 //
 
 #pragma once
+#include <cmath>
 #include <cstdint>
 #include <ctime>
 #include <memory>
 #include <stack>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include "utils.hpp"
@@ -73,10 +75,13 @@ namespace lox::callable {
     using lox::interpreter::Interpreter;
     using lox::tokenizer::token::Token;
 
+    using std::cos;
     using std::dynamic_pointer_cast;
     using std::enable_shared_from_this;
     using std::make_shared;
+    using std::runtime_error;
     using std::shared_ptr;
+    using std::sin;
     using std::stack;
     using std::string;
     using std::time;
@@ -155,10 +160,6 @@ namespace lox::callable {
             return "<fn " + get_func_name(decl) + ">";
         }
 
-        [[nodiscard]] bool is_initialiser() const{
-            return is_init;
-        }
-
         shared_ptr<LoxFunction> bind(const InstancePtr& inst);
 
         [[nodiscard]] constexpr ubyte arity() const final;
@@ -217,7 +218,35 @@ namespace lox::callable{
                     return 0;
                 }
 
-                [[nodiscard]] Value call(const shared_ptr<Environment>& env, const vector<Value> &args) final;
+                [[nodiscard]] Value call(const shared_ptr<Environment>& env, const vector<Value>& args) final;
+                [[nodiscard]] Value call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args) final;
+        };
+
+        class CosFunc: public AbstractLoxCallable{
+            public:
+                [[nodiscard]] string to_string() const final{
+                    return "<fn cos>";
+                }
+
+                [[nodiscard]] constexpr ubyte arity() const final{
+                    return 1;
+                }
+
+                [[nodiscard]] Value call(const shared_ptr<Environment>& env, const vector<Value>& args) final;
+                [[nodiscard]] Value call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args) final;
+        };
+
+        class SinFunc: public AbstractLoxCallable{
+            public:
+                [[nodiscard]] string to_string() const final{
+                    return "<fn sin>";
+                }
+
+                [[nodiscard]] constexpr ubyte arity() const final{
+                    return 1;
+                }
+
+                [[nodiscard]] Value call(const shared_ptr<Environment>& env, const vector<Value>& args) final;
                 [[nodiscard]] Value call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args) final;
         };
     }

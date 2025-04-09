@@ -30,8 +30,6 @@ int main(int argc, char *argv[]) {
     cout << unitbuf;
     cerr << unitbuf;
 
-    cerr << "Error logs:" << endl;
-
     if (argc < 3) {
         cerr << "Usage: ./interpreter tokenize|parse|run <filename>" << endl;
         return 1;
