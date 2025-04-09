@@ -42,6 +42,8 @@ namespace lox::callable{
     }
 
     Value LoxFunction::call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args){
+        prev_children.push(child_env);
+        child_env = get_child_env(closure);
         vector<Token> decl_args = get_args(decl);
 
         for (ubyte i = 0; i < get_arg_count(decl); ++i){
@@ -51,7 +53,8 @@ namespace lox::callable{
         set_current_env(interpreter, child_env);
         Value ret_val = exec_func_body(interpreter, decl);
         return_to_previous_env(interpreter);
-        child_env = get_child_env(closure);
+        child_env = prev_children.top();
+        prev_children.pop();
 
         return ret_val;
     }

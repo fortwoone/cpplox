@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <ctime>
 #include <memory>
+#include <stack>
 #include <string>
 #include "utils.hpp"
 #include "tokenizer.hpp"
@@ -72,6 +73,7 @@ namespace lox::callable {
 
     using std::make_shared;
     using std::shared_ptr;
+    using std::stack;
     using std::string;
     using std::time;
     using std::time_t;
@@ -132,6 +134,7 @@ namespace lox::callable{
     class LoxFunction: public AbstractLoxCallable{
         shared_ptr<ast::Statement> decl;
         shared_ptr<Environment> closure, child_env;
+        stack<shared_ptr<Environment>> prev_children;
 
         public:
             LoxFunction(const shared_ptr<ast::Statement>& decl, const shared_ptr<Environment>& closure);
