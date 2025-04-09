@@ -92,8 +92,8 @@ namespace lox::callable {
 
         [[nodiscard]] virtual constexpr ubyte arity() const = 0;
 
-        [[nodiscard]] virtual Value call(const shared_ptr<Interpreter>& interpreter, const vector<Value> &args) const = 0;
-        [[nodiscard]] virtual Value call(const shared_ptr<Environment>& env, const vector<Value> &args) const = 0;
+        [[nodiscard]] virtual Value call(const shared_ptr<Interpreter>& interpreter, const vector<Value> &args) = 0;
+        [[nodiscard]] virtual Value call(const shared_ptr<Environment>& env, const vector<Value> &args) = 0;
     };
 
 }
@@ -142,8 +142,8 @@ namespace lox::callable{
 
             [[nodiscard]] constexpr ubyte arity() const final;
 
-            [[nodiscard]] Value call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args) const final;
-            [[nodiscard]] Value call(const shared_ptr<Environment>& env, const vector<Value>& args) const final;
+            [[nodiscard]] Value call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args) final;
+            [[nodiscard]] Value call(const shared_ptr<Environment>& env, const vector<Value>& args) final;
     };
 
     namespace builtins{
@@ -157,8 +157,8 @@ namespace lox::callable{
                     return 0;
                 }
 
-                [[nodiscard]] Value call(const shared_ptr<Environment>& env, const vector<Value> &args) const final;
-                [[nodiscard]] Value call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args) const final;
+                [[nodiscard]] Value call(const shared_ptr<Environment>& env, const vector<Value> &args) final;
+                [[nodiscard]] Value call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args) final;
         };
     }
 }

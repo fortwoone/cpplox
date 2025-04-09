@@ -29,7 +29,7 @@ namespace lox::callable{
         return get_arg_count(decl);
     }
 
-    Value LoxFunction::call(const shared_ptr<Environment>& env, const vector<Value>& args) const{
+    Value LoxFunction::call(const shared_ptr<Environment>& env, const vector<Value>& args){
         vector<Token> decl_args = get_args(decl);
 
         for (ubyte i = 0; i < get_arg_count(decl); ++i){
@@ -41,7 +41,7 @@ namespace lox::callable{
         return ret_val;
     }
 
-    Value LoxFunction::call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args) const{
+    Value LoxFunction::call(const shared_ptr<Interpreter>& interpreter, const vector<Value>& args){
         vector<Token> decl_args = get_args(decl);
 
         for (ubyte i = 0; i < get_arg_count(decl); ++i){
@@ -51,16 +51,17 @@ namespace lox::callable{
         set_current_env(interpreter, child_env);
         Value ret_val = exec_func_body(interpreter, decl);
         return_to_previous_env(interpreter);
+        child_env = get_child_env(closure);
 
         return ret_val;
     }
 
     namespace builtins{
-        Value ClockFunc::call(const shared_ptr<Environment>& interpreter, const vector<Value> &args) const {
+        Value ClockFunc::call(const shared_ptr<Environment>& interpreter, const vector<Value> &args){
             return (double)time(nullptr);
         }
 
-        Value ClockFunc::call(const shared_ptr<Interpreter>& interpreter, const vector<Value> &args) const {
+        Value ClockFunc::call(const shared_ptr<Interpreter>& interpreter, const vector<Value> &args){
             return (double)time(nullptr);
         }
     }
