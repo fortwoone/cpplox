@@ -17,12 +17,11 @@ namespace lox::resolver{
         if (scope_stack.empty()){
             return;
         }
-        Scope deepest = scope_stack.back();
-        if (deepest.contains(name)){
+        if (scope_stack.back().contains(name)){
             throw resolve_error("Current scope already has a variable with this name.");
         }
 
-        deepest.insert({name, false});
+        scope_stack.back().insert({name, false});
     }
 
     void Resolver::define(const string& name){
@@ -63,8 +62,8 @@ namespace lox::resolver{
 
     void Resolver::resolve_var_expr(const shared_ptr<ast::VariableExpr>& var_expr){
         if (!scope_stack.empty()){
-            Scope deepest = scope_stack.back();
-            if (deepest.contains(var_expr->get_name()) && !deepest.at(var_expr->get_name()))
+            string var_name = var_expr->get_name();
+            if (scope_stack.back().contains(var_name) && !scope_stack.back().at(var_name))
                 throw resolve_error("Can't read local variable in its own initialiser.\0");
         }
 
@@ -89,17 +88,13 @@ namespace lox::resolver{
         }
     }
 
-    void Resolver::resolve_abstract_access_expr(const shared_ptr<ast::AbstractInstAccessExpr>& abst_acc_expr){
-        resolve(abst_acc_expr->get_obj());
-    }
-
     void Resolver::resolve_get_expr(const shared_ptr<ast::GetAttrExpr>& get_attr_expr){
-        resolve_abstract_access_expr(get_attr_expr);
+        resolve(get_attr_expr->get_obj());
     }
 
     void Resolver::resolve_set_expr(const shared_ptr<ast::SetAttrExpr>& set_attr_expr){
         resolve(set_attr_expr->get_value());
-        resolve_abstract_access_expr(set_attr_expr);
+        resolve(set_attr_expr->get_obj());
     }
 
     void Resolver::resolve_this_expr(const shared_ptr<ast::ThisExpr>& this_expr){
