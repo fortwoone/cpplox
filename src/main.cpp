@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
             return 65;
         }
         catch (const lox::resolve_error& exc){
-            cout << exc.what() << endl;
+            cerr << exc.what() << endl;
             return 65;
         }
         catch (const exception& exc){
