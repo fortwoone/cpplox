@@ -3,5 +3,7 @@
 This is a C++ interpreter for Lox, made while taking on the
 ["Build your own Interpreter" Challenge](https://app.codecrafters.io/courses/interpreter/overview) by CodeCrafters.
 
-This challenge follows the book
+Said challenge follows the book
 [Crafting Interpreters](https://craftinginterpreters.com/) by Robert Nystrom.
+
+NOTE: Lox is a language created solely for the purpose of said book.
