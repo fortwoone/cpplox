@@ -9,7 +9,12 @@ namespace lox::interpreter{
         if (locals.contains(expr)){
             return env->get_at(locals.at(expr), name);
         }
-        return env->get(name);
+        try{
+            return env->get(name);
+        }
+        catch (const exception& exc){
+            return globals->get(name);
+        }
     }
 
     void Interpreter::assign_var(const string& name, const ExprPtr& expr){
@@ -22,7 +27,12 @@ namespace lox::interpreter{
             );
         }
         else{
-            globals->assign(name, val);
+            try{
+                env->assign(name, val);
+            }
+            catch (const exception& exc){
+                globals->assign(name, val);
+            }
         }
     }
 
