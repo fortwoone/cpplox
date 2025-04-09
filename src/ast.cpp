@@ -614,6 +614,9 @@ namespace lox::ast{
         else if (holds_alternative<CallablePtr>(result)){
             cout << as_func(result)->to_string() << endl;
         }
+        else if (holds_alternative<InstancePtr>(result)){
+            cout << as_cls_inst(result)->to_string() << endl;
+        }
         else{
             cout << as_string(result) << endl;
         }

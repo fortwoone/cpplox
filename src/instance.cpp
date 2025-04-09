@@ -5,7 +5,9 @@
 #include "instance.hpp"
 
 namespace lox::inst{
-    LoxInstance::LoxInstance(const ClassPtr& klass): cls(klass){}
+    LoxInstance::LoxInstance(const ClassPtr& klass): cls(klass){
+
+    }
 
     VarValue LoxInstance::get_attr(const string& name){
         if (fields.contains(name)){
