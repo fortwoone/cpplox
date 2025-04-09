@@ -38,7 +38,8 @@ namespace lox::resolver{
 
     enum class ClassType: ubyte{
         NONE,
-        CLASS
+        CLASS,
+        SUBCLASS
     };
 
     class Resolver: public enable_shared_from_this<Resolver>{
@@ -65,6 +66,7 @@ namespace lox::resolver{
         void resolve_get_expr(const shared_ptr<ast::GetAttrExpr>& get_attr_expr);
         void resolve_set_expr(const shared_ptr<ast::SetAttrExpr>& set_attr_expr);
         void resolve_this_expr(const shared_ptr<ast::ThisExpr>& this_expr);
+        void resolve_super_expr(const shared_ptr<ast::SuperExpr>& super_expr);
         // endregion
 
         // region Resolve methods for individual statement types

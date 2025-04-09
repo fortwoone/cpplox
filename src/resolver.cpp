@@ -100,6 +100,18 @@ namespace lox::resolver{
         }
         resolve_local(this_expr, "this");
     }
+
+    void Resolver::resolve_super_expr(const shared_ptr<ast::SuperExpr>& super_expr){
+        switch (current_cls){
+            case ClassType::NONE:
+                throw resolve_error("Cannot use 'super' outside of classes.");
+            case ClassType::CLASS:
+                throw resolve_error("Current class does not have a superclass.");
+            default:
+                break;
+        }
+        resolve_local(super_expr, "super");
+    }
     // endregion
 
     // region Resolve methods for individual statement types
@@ -107,8 +119,24 @@ namespace lox::resolver{
         ClassType enclosing_cls = current_cls;
         current_cls = ClassType::CLASS;
 
-        declare(class_stmt->get_name());
-        define(class_stmt->get_name());
+        string cls_name = class_stmt->get_name();
+
+        declare(cls_name);
+        define(cls_name);
+
+        bool has_supercls = class_stmt->has_superclass();
+
+        if (has_supercls){
+            auto super_cls_expr = class_stmt->get_superclass();
+            if (super_cls_expr->get_name() == cls_name){
+                throw resolve_error("A class can't inherit from itself.");
+            }
+            current_cls = ClassType::SUBCLASS;
+            resolve(super_cls_expr);
+
+            start_scope();
+            scope_stack.back().insert({"super", true});  // Enable access to superclass inside methods.
+        }
 
         start_scope();
         scope_stack.back().insert({"this", true});  // Allow the resolver to take care of this expressions.
@@ -124,6 +152,10 @@ namespace lox::resolver{
         }
 
         finish_scope();
+
+        if (has_supercls){
+            finish_scope();
+        }
         current_cls = enclosing_cls;
     }
 
@@ -179,6 +211,14 @@ namespace lox::resolver{
 
     void Resolver::resolve(const shared_ptr<ast::Expr>& expr){
         // Literals do not need to be resolved.
+        auto as_super = dynamic_pointer_cast<ast::SuperExpr>(expr);
+        if (as_super != nullptr){
+            return resolve_super_expr(as_super);
+        }
+        auto as_this = dynamic_pointer_cast<ast::ThisExpr>(expr);
+        if (as_this != nullptr){
+            return resolve_this_expr(as_this);
+        }
         auto as_assign = dynamic_pointer_cast<ast::AssignmentExpr>(expr);
         if (as_assign != nullptr){
             return resolve_assign_expr(as_assign);
@@ -198,10 +238,6 @@ namespace lox::resolver{
         auto as_call_expr = dynamic_pointer_cast<ast::CallExpr>(expr);
         if (as_call_expr != nullptr){
             return resolve_call_expr(as_call_expr);
-        }
-        auto as_this = dynamic_pointer_cast<ast::ThisExpr>(expr);
-        if (as_this != nullptr){
-            return resolve_this_expr(as_this);
         }
         auto as_set_attr = dynamic_pointer_cast<ast::SetAttrExpr>(expr);
         if (as_set_attr != nullptr){

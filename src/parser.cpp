@@ -50,6 +50,13 @@ namespace lox::parser{
             return make_shared<ast::LiteralExpr>(LiteralExprType::NIL);
         }
 
+        if (match(SUPER)){
+            Token kw = previous();
+            consume(DOT, "Expected '.' after super keyword.");
+            Token meth = consume(IDENTIFIER, "Expected superclass method name.");
+            return make_shared<ast::SuperExpr>(kw, meth);
+        }
+
         if (match(THIS)){
             return make_shared<ast::ThisExpr>(previous());
         }
@@ -508,6 +515,13 @@ namespace lox::parser{
         using enum TokenType;
 
         Token name = consume(IDENTIFIER, "Expected class name.");
+
+        shared_ptr<ast::VariableExpr> super_cls = nullptr;
+        if (match(LESS)){
+            consume(IDENTIFIER, "Expected superclass name after '<'.");
+            super_cls = make_shared<ast::VariableExpr>(previous());
+        }
+
         consume(LEFT_BRACE, "Expected '{' before class body.");
 
         vector<shared_ptr<ast::FunctionStmt>> meths;
@@ -525,7 +539,7 @@ namespace lox::parser{
         }
 
         consume(RIGHT_BRACE, "Expected '}' after class body.");
-        return make_shared<ast::ClassStmt>(name, meths);
+        return make_shared<ast::ClassStmt>(name, super_cls, meths);
     }
 
     StmtPtr Parser::get_declaration(){  // NOLINT

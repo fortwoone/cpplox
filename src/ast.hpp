@@ -46,7 +46,7 @@ namespace lox::interpreter{
     }
 }
 
-namespace lox::ast{
+namespace lox::ast {
     using lox::callable::CallablePtr;
     using lox::callable::EvalResult;
     using lox::callable::InstancePtr;
@@ -54,6 +54,7 @@ namespace lox::ast{
     using lox::callable::LoxFunction;
     using lox::callable::MethodMap;
     using lox::env::Environment;
+    using lox::inst::ClassPtr;
     using lox::inst::LoxInstance;
     using lox::interpreter::Interpreter;
     using lox::interpreter::for_ast::look_up_var;
@@ -92,16 +93,19 @@ namespace lox::ast{
     bool is_truthy(EvalResult eval_result);
 
     // region Expressions
-    class Expr: public enable_shared_from_this<Expr>{
-        public:
-            virtual ~Expr() = default;
-            [[nodiscard]] virtual string to_string() const = 0;
-            [[nodiscard]] virtual EvalResult evaluate(const shared_ptr<Environment>& env) = 0;
-            [[nodiscard]] virtual EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) = 0;
+    class Expr : public enable_shared_from_this<Expr> {
+    public:
+        virtual ~Expr() = default;
+
+        [[nodiscard]] virtual string to_string() const = 0;
+
+        [[nodiscard]] virtual EvalResult evaluate(const shared_ptr<Environment> &env) = 0;
+
+        [[nodiscard]] virtual EvalResult evaluate(const shared_ptr<Interpreter> &interpreter) = 0;
     };
 
 
-    enum class LiteralExprType: ubyte{
+    enum class LiteralExprType : ubyte {
         TRUE,
         FALSE,
         NIL,
@@ -113,20 +117,23 @@ namespace lox::ast{
 
 
     // Literals
-    class LiteralExpr: public Expr{
+    class LiteralExpr : public Expr {
         string value;
-        public:
-            LiteralExprType expr_type;
+    public:
+        LiteralExprType expr_type;
 
-            explicit LiteralExpr(LiteralExprType type): expr_type(type){}
-            explicit LiteralExpr(LiteralExprType type, string value): expr_type(type), value(std::move(value)){}
+        explicit LiteralExpr(LiteralExprType type) : expr_type(type) {}
 
-            [[nodiscard]] string to_string() const final;
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) final;
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) final;
+        explicit LiteralExpr(LiteralExprType type, string value) : expr_type(type), value(std::move(value)) {}
+
+        [[nodiscard]] string to_string() const final;
+
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment> &env) final;
+
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter> &interpreter) final;
     };
 
-    enum class Operator: ubyte{
+    enum class Operator : ubyte {
         PLUS,
         MINUS,
         STAR,
@@ -144,210 +151,246 @@ namespace lox::ast{
 
     Operator get_op_from_token(TokenType tp);
 
-    class AbstractBinaryExpr: public Expr{
-        protected:
-            shared_ptr<Expr> left, right;
-            Operator op;
+    class AbstractBinaryExpr : public Expr {
+    protected:
+        shared_ptr<Expr> left, right;
+        Operator op;
 
-        public:
-            AbstractBinaryExpr(shared_ptr<Expr> left, Operator op, shared_ptr<Expr> right)
-                    : left(std::move(left)), op(op), right(std::move(right)){}
+    public:
+        AbstractBinaryExpr(shared_ptr<Expr> left, Operator op, shared_ptr<Expr> right)
+                : left(std::move(left)), op(op), right(std::move(right)) {}
 
-            [[nodiscard]] shared_ptr<Expr> get_left() const{
-                return left;
-            }
+        [[nodiscard]] shared_ptr<Expr> get_left() const {
+            return left;
+        }
 
-            [[nodiscard]] shared_ptr<Expr> get_right() const{
-                return right;
-            }
+        [[nodiscard]] shared_ptr<Expr> get_right() const {
+            return right;
+        }
 
-            [[nodiscard]] string to_string() const final;
+        [[nodiscard]] string to_string() const final;
 
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) override = 0;
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) override = 0;
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment> &env) override = 0;
+
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter> &interpreter) override = 0;
     };
 
-    class BinaryExpr: public AbstractBinaryExpr{
-        public:
-            BinaryExpr(shared_ptr<Expr> left, Operator op, shared_ptr<Expr> right)
-                    : AbstractBinaryExpr(std::move(left), op, std::move(right)){}
+    class BinaryExpr : public AbstractBinaryExpr {
+    public:
+        BinaryExpr(shared_ptr<Expr> left, Operator op, shared_ptr<Expr> right)
+                : AbstractBinaryExpr(std::move(left), op, std::move(right)) {}
 
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) final;
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) final;
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment> &env) final;
+
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter> &interpreter) final;
     };
 
-    class GroupExpr: public Expr{
-        public:
-            shared_ptr<Expr> expr;
+    class GroupExpr : public Expr {
+    public:
+        shared_ptr<Expr> expr;
 
-            explicit GroupExpr(shared_ptr<Expr> expression): expr(std::move(expression)){}
+        explicit GroupExpr(shared_ptr<Expr> expression) : expr(std::move(expression)) {}
 
-            [[nodiscard]] string to_string() const final{
-                return "(group " + expr->to_string() + ")";
-            }
+        [[nodiscard]] string to_string() const final {
+            return "(group " + expr->to_string() + ")";
+        }
 
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) final{
-                return expr->evaluate(env);
-            };
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment> &env) final {
+            return expr->evaluate(env);
+        };
 
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) final{
-                return expr->evaluate(interpreter);
-            }
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter> &interpreter) final {
+            return expr->evaluate(interpreter);
+        }
     };
 
-    class UnaryExpr: public Expr{
+    class UnaryExpr : public Expr {
         Operator op;
         shared_ptr<Expr> operand;
-        public:
-            UnaryExpr(Operator operat, shared_ptr<Expr> expression): op(operat), operand(std::move(expression)){}
+    public:
+        UnaryExpr(Operator operat, shared_ptr<Expr> expression) : op(operat), operand(std::move(expression)) {}
 
-            [[nodiscard]] shared_ptr<Expr> get_operand() const{
-                return operand;
-            }
+        [[nodiscard]] shared_ptr<Expr> get_operand() const {
+            return operand;
+        }
 
-            [[nodiscard]] string to_string() const final;
+        [[nodiscard]] string to_string() const final;
 
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) final;
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) final;
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment> &env) final;
+
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter> &interpreter) final;
     };
 
-    class AbstractVarExpr: public Expr{
-        protected:
-            string name;
+    class AbstractVarExpr : public Expr {
+    protected:
+        string name;
 
-        public:
-            AbstractVarExpr(const string& name): name(name){};
+    public:
+        AbstractVarExpr(const string &name) : name(name) {};
 
-            [[nodiscard]] string get_name() const{
-                return name;
-            };
+        [[nodiscard]] string get_name() const {
+            return name;
+        };
 
-            [[nodiscard]] string to_string() const final{
-                return name;
-            };
+        [[nodiscard]] string to_string() const final {
+            return name;
+        };
 
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) override = 0;
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) override = 0;
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment> &env) override = 0;
+
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter> &interpreter) override = 0;
     };
 
-    class VariableExpr: public AbstractVarExpr{
-        public:
-            explicit VariableExpr(const Token& id_token);
+    class VariableExpr : public AbstractVarExpr {
+    public:
+        explicit VariableExpr(const Token &id_token);
 
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) final;
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) final;
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment> &env) final;
+
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter> &interpreter) final;
     };
 
-    class AssignmentExpr: public AbstractVarExpr{
+    class AssignmentExpr : public AbstractVarExpr {
         shared_ptr<Expr> value;
 
-        public:
-            AssignmentExpr(string name, shared_ptr<Expr> value);
+    public:
+        AssignmentExpr(string name, shared_ptr<Expr> value);
 
-            [[nodiscard]] shared_ptr<Expr> get_value() const{
-                return value;
-            };
+        [[nodiscard]] shared_ptr<Expr> get_value() const {
+            return value;
+        };
 
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) final;
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) final;
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment> &env) final;
+
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter> &interpreter) final;
     };
 
-    class LogicalExpr: public AbstractBinaryExpr{
-        public:
-            LogicalExpr(shared_ptr<Expr> left, Operator op, shared_ptr<Expr> right)
-                    : AbstractBinaryExpr(std::move(left), op, std::move(right)){
-                if (op != Operator::AND && op != Operator::OR){
-                    throw invalid_argument("Logical expressions cannot be constructed with non-logical operators.");
-                }
+    class LogicalExpr : public AbstractBinaryExpr {
+    public:
+        LogicalExpr(shared_ptr<Expr> left, Operator op, shared_ptr<Expr> right)
+                : AbstractBinaryExpr(std::move(left), op, std::move(right)) {
+            if (op != Operator::AND && op != Operator::OR) {
+                throw invalid_argument("Logical expressions cannot be constructed with non-logical operators.");
             }
+        }
 
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) final;
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) final;
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment> &env) final;
+
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter> &interpreter) final;
     };
 
-    class CallExpr: public Expr{
+    class CallExpr : public Expr {
         shared_ptr<Expr> callee;
-        Token& paren;
+        Token &paren;
         vector<shared_ptr<Expr>> args;
 
-        public:
-            CallExpr(const shared_ptr<Expr>& callee, Token& paren, const vector<shared_ptr<Expr>>& args);
+    public:
+        CallExpr(const shared_ptr<Expr> &callee, Token &paren, const vector<shared_ptr<Expr>> &args);
 
-            [[nodiscard]] shared_ptr<Expr> get_callee() const{
-                return callee;
-            }
+        [[nodiscard]] shared_ptr<Expr> get_callee() const {
+            return callee;
+        }
 
-            [[nodiscard]] vector<shared_ptr<Expr>> get_args() const{
-                return args;
-            }
+        [[nodiscard]] vector<shared_ptr<Expr>> get_args() const {
+            return args;
+        }
 
-            [[nodiscard]] string to_string() const final;
+        [[nodiscard]] string to_string() const final;
 
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) final;
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) final;
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment> &env) final;
+
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter> &interpreter) final;
     };
 
-    class AbstractInstAccessExpr: public Expr{
-        protected:
-            shared_ptr<Expr> obj;
-            Token attr_token;
-            string attr_name;
+    class AbstractInstAccessExpr : public Expr {
+    protected:
+        shared_ptr<Expr> obj;
+        Token attr_token;
+        string attr_name;
 
-        public:
-            explicit AbstractInstAccessExpr(const shared_ptr<Expr>& target, const Token& attr);
+    public:
+        explicit AbstractInstAccessExpr(const shared_ptr<Expr> &target, const Token &attr);
 
-            [[nodiscard]] shared_ptr<Expr> get_obj() const{
-                return obj;
-            }
+        [[nodiscard]] shared_ptr<Expr> get_obj() const {
+            return obj;
+        }
 
-            [[nodiscard]] Token get_attr_token() const{
-                return attr_token;
-            }
+        [[nodiscard]] Token get_attr_token() const {
+            return attr_token;
+        }
 
-            [[nodiscard]] string get_attr_name() const{
-                return attr_name;
-            }
+        [[nodiscard]] string get_attr_name() const {
+            return attr_name;
+        }
 
-            [[nodiscard]] string to_string() const override;
+        [[nodiscard]] string to_string() const override;
 
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) override = 0;
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) override = 0;
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment> &env) override = 0;
+
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter> &interpreter) override = 0;
     };
 
-    class GetAttrExpr: public AbstractInstAccessExpr{
-        public:
-            explicit GetAttrExpr(const shared_ptr<Expr>& target, const Token& attr);
+    class GetAttrExpr : public AbstractInstAccessExpr {
+    public:
+        explicit GetAttrExpr(const shared_ptr<Expr> &target, const Token &attr);
 
-            [[nodiscard]] string to_string() const final;
+        [[nodiscard]] string to_string() const final;
 
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) final;
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) final;
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment> &env) final;
+
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter> &interpreter) final;
     };
 
-    class SetAttrExpr: public AbstractInstAccessExpr{
+    class SetAttrExpr : public AbstractInstAccessExpr {
         shared_ptr<Expr> value;
 
-        public:
-            explicit SetAttrExpr(const shared_ptr<Expr>& target, const Token& attr, const shared_ptr<Expr>& value);
+    public:
+        explicit SetAttrExpr(const shared_ptr<Expr> &target, const Token &attr, const shared_ptr<Expr> &value);
 
-            [[nodiscard]] shared_ptr<Expr> get_value() const{
-                return value;
-            }
+        [[nodiscard]] shared_ptr<Expr> get_value() const {
+            return value;
+        }
 
-            [[nodiscard]] string to_string() const final;
+        [[nodiscard]] string to_string() const final;
 
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) final;
-            [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter>& interpreter) final;
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment> &env) final;
+
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter> &interpreter) final;
     };
 
-    class ThisExpr: public Expr{
+    class ThisExpr : public Expr {
         Token kw;
 
+    public:
+        explicit ThisExpr(const Token &token) : kw(token) {}
+
+        [[nodiscard]] string to_string() const final {
+            return "this";
+        }
+
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment> &env) final;
+
+        [[nodiscard]] EvalResult evaluate(const shared_ptr<Interpreter> &interpreter) final;
+    };
+
+    class SuperExpr;
+}
+
+namespace lox::interpreter::for_ast{
+    size_t get_super_dist(const shared_ptr<Interpreter>& interpreter, const shared_ptr<ast::SuperExpr>& expr);
+}
+
+namespace lox::ast{
+    using lox::interpreter::for_ast::get_super_dist;
+
+    class SuperExpr: public Expr{
+        Token kw, meth;
+
         public:
-            explicit ThisExpr(const Token& token): kw(token){}
+            explicit SuperExpr(const Token& kw, const Token& meth);
 
             [[nodiscard]] string to_string() const final{
-                return "this";
+                return "super";
             }
 
             [[nodiscard]] EvalResult evaluate(const shared_ptr<Environment>& env) final;
@@ -523,13 +566,22 @@ namespace lox::ast{
 
     class ClassStmt: public Statement{
         string name;
+        shared_ptr<VariableExpr> super_cls;
         vector<shared_ptr<FunctionStmt>> methods;
 
         public:
-            explicit ClassStmt(const Token& id_token, const vector<shared_ptr<FunctionStmt>>& meths);
+            explicit ClassStmt(const Token& id_token, const shared_ptr<VariableExpr>& superclass, const vector<shared_ptr<FunctionStmt>>& meths);
 
             [[nodiscard]] string get_name() const{
                 return name;
+            }
+
+            [[nodiscard]] bool has_superclass() const{
+                return super_cls != nullptr;
+            }
+
+            [[nodiscard]] shared_ptr<VariableExpr> get_superclass() const{
+                return super_cls;
             }
 
             [[nodiscard]] vector<shared_ptr<FunctionStmt>> get_meths() const{

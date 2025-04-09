@@ -45,6 +45,7 @@ namespace lox::interpreter{
 
         friend VarValue for_ast::look_up_var(const shared_ptr<Interpreter>& interpreter, const string& name, const shared_ptr<ast::Expr>& expr);
         friend void for_ast::assign_var(const shared_ptr<Interpreter>& interpreter, const string& name, const shared_ptr<ast::Expr>& expr);
+        friend size_t for_ast::get_super_dist(const shared_ptr<Interpreter>& interpreter, const shared_ptr<ast::SuperExpr>& expr);
 
         VarValue look_up_variable(const string& name, const ExprPtr& expr);
         void assign_var(const string& name, const ExprPtr& expr);
@@ -99,6 +100,8 @@ namespace lox::interpreter{
         VarValue look_up_var(const shared_ptr<Interpreter>& interpreter, const string& name, const ExprPtr& expr);
 
         void assign_var(const shared_ptr<Interpreter>& interpreter, const string& name, const ExprPtr& expr);
+
+        size_t get_super_dist(const shared_ptr<Interpreter>& interpreter, const shared_ptr<ast::SuperExpr>& expr);
 
         void set_current_env(const shared_ptr<Interpreter>& interpreter, const shared_ptr<Environment>& env);
 

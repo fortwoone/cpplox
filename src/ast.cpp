@@ -557,6 +557,38 @@ namespace lox::ast{
     }
     // endregion
 
+    // region SuperExpr
+    SuperExpr::SuperExpr(const Token& kw, const Token& meth)
+    : kw(kw), meth(meth){
+        if (kw.get_token_type() != TokenType::SUPER || meth.get_token_type() != TokenType::IDENTIFIER){
+            throw parse_error(65, "Super expression built from wrong token type.");
+        }
+    }
+
+    EvalResult SuperExpr::evaluate(const shared_ptr<Environment>& env){
+        return "nil";
+    }
+
+    EvalResult SuperExpr::evaluate(const shared_ptr<Interpreter>& interpreter){
+        auto shared = dynamic_pointer_cast<SuperExpr>(shared_from_this());
+        size_t dist = get_super_dist(interpreter, shared);
+
+        EvalResult cls_evaled = get_current_env(interpreter)->get_at(dist, "super");
+        ClassPtr super_cls = dynamic_pointer_cast<LoxClass>(as_func(cls_evaled));
+        InstancePtr obj = as_cls_inst(
+            get_current_env(interpreter)->get_at(dist - 1, "this")
+        );
+
+        shared_ptr<LoxFunction> method = super_cls->find_meth(meth.get_lexeme());
+
+        if (method == nullptr){
+            throw runtime_error("Undefined property '" + meth.get_lexeme() + "'.");
+        }
+
+        return method->bind(obj);
+    }
+    // endregion
+
     // region ExprStatement
     void ExprStatement::execute(const shared_ptr<Environment>& env){
         EvalResult result = expr->evaluate(env);
@@ -817,14 +849,30 @@ namespace lox::ast{
     // endregion
 
     // region ClassStmt
-    ClassStmt::ClassStmt(const Token& id_token, const vector<shared_ptr<FunctionStmt>>& meths)
-    : name(id_token.get_lexeme()), methods(meths){
+    ClassStmt::ClassStmt(const Token& id_token, const shared_ptr<VariableExpr>& superclass, const vector<shared_ptr<FunctionStmt>>& meths)
+    : name(id_token.get_lexeme()), super_cls(superclass), methods(meths){
         if (id_token.get_token_type() != TokenType::IDENTIFIER){
             throw parse_error(65, "Classes must be declared using non-literal values.\0");
         }
     }
 
     void ClassStmt::execute(const shared_ptr<Environment>& env){
+        auto current_env = env;
+        EvalResult superclass = super_cls->evaluate(env);
+        shared_ptr<LoxClass> supercls_as_cls = nullptr;
+        if (!holds_alternative<CallablePtr>(superclass)){
+            throw runtime_error("Superclass must be a class.");
+        }
+        else{
+            CallablePtr as_callable = as_func(superclass);
+            supercls_as_cls = dynamic_pointer_cast<LoxClass>(as_callable);
+            if (supercls_as_cls == nullptr){
+                throw runtime_error("Superclass must be a class.");
+            }
+            current_env = make_shared<Environment>(env);
+            current_env->set("super", as_callable);
+        }
+
         MethodMap meth_map;
         meth_map.reserve(methods.size());
 
@@ -832,14 +880,14 @@ namespace lox::ast{
             meth_map.insert(
                 {
                     meth_decl->get_name(),
-                    make_shared<LoxFunction>(meth_decl, env, meth_decl->get_name() == "init")
+                    make_shared<LoxFunction>(meth_decl, current_env, meth_decl->get_name() == "init")
                 }
             );
         }
 
         env->set(
             name,
-            make_shared<LoxClass>(name, meth_map)
+            make_shared<LoxClass>(name, supercls_as_cls, meth_map)
         );
     }
 

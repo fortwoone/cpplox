@@ -67,6 +67,10 @@ namespace lox::interpreter{
             interpreter->assign_var(name, expr);
         }
 
+        size_t get_super_dist(const shared_ptr<Interpreter>& interpreter, const shared_ptr<ast::SuperExpr>& expr){
+            return interpreter->locals.at(expr);
+        }
+
         shared_ptr<Environment> get_current_env(const shared_ptr<Interpreter>& interpreter){
             return interpreter->get_current_env();
         }

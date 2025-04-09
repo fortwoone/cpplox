@@ -79,7 +79,8 @@ namespace lox::callable{
     // endregion
 
     // region LoxClass
-    LoxClass::LoxClass(const string& cls_name, const MethodMap& meths): name(cls_name), methods(meths){
+    LoxClass::LoxClass(const string& cls_name, const shared_ptr<LoxClass>& superclass, const MethodMap& meths)
+    : name(cls_name), superclass(superclass), methods(meths){
         auto initialiser = find_meth("init");
         if (initialiser != nullptr){
             init_arity = initialiser->arity();
@@ -93,6 +94,10 @@ namespace lox::callable{
         if (methods.contains(meth_name)){
             return methods.at(meth_name);
         }
+
+        if (superclass != nullptr)
+            return superclass->find_meth(meth_name);
+
         return nullptr;
     }
 

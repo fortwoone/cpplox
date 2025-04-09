@@ -193,11 +193,12 @@ namespace lox::callable{
 
     class LoxClass: public AbstractLoxCallable{
         string name;
+        shared_ptr<LoxClass> superclass;
         MethodMap methods;
         ubyte init_arity;
 
         public:
-            explicit LoxClass(const string& cls_name, const MethodMap& meths);
+            explicit LoxClass(const string& cls_name, const shared_ptr<LoxClass>& superclass, const MethodMap& meths);
 
             shared_ptr<LoxFunction> find_meth(const string& meth_name);
 
