@@ -857,20 +857,21 @@ namespace lox::ast{
     }
 
     void ClassStmt::execute(const shared_ptr<Environment>& env){
-        auto current_env = env;
-        EvalResult superclass = super_cls->evaluate(env);
         shared_ptr<LoxClass> supercls_as_cls = nullptr;
-        if (!holds_alternative<CallablePtr>(superclass)){
-            throw runtime_error("Superclass must be a class.");
-        }
-        else{
-            CallablePtr as_callable = as_func(superclass);
-            supercls_as_cls = dynamic_pointer_cast<LoxClass>(as_callable);
-            if (supercls_as_cls == nullptr){
+        auto current_env = env;
+        if (super_cls != nullptr){
+            EvalResult superclass = super_cls->evaluate(current_env);
+            if (!holds_alternative<CallablePtr>(superclass)) {
                 throw runtime_error("Superclass must be a class.");
+            } else {
+                CallablePtr as_callable = as_func(superclass);
+                supercls_as_cls = dynamic_pointer_cast<LoxClass>(as_callable);
+                if (supercls_as_cls == nullptr) {
+                    throw runtime_error("Superclass must be a class.");
+                }
+                current_env = make_shared<Environment>(env);
+                current_env->set("super", as_callable);
             }
-            current_env = make_shared<Environment>(env);
-            current_env->set("super", as_callable);
         }
 
         MethodMap meth_map;
