@@ -70,7 +70,7 @@ namespace lox::resolver{
 
     void Resolver::resolve_assign_expr(const shared_ptr<ast::AssignmentExpr>& assign_expr){
         resolve(assign_expr->get_value());
-        resolve_local(assign_expr, assign_expr->get_name());
+        resolve_local(assign_expr->get_value(), assign_expr->get_name());
     }
 
     void Resolver::resolve_unary_expr(const shared_ptr<ast::UnaryExpr>& unary_expr){
